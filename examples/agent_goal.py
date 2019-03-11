@@ -189,7 +189,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # init the game
+    print('Init Env')
     env = magent.GridWorld("agent_goal", map_size=args.map_size)
+    print('Env initialized')
     env.set_render_dir("build/render")
 
     # two groups of animal

@@ -251,6 +251,51 @@ PositionInteger Map::get_attack_obj(const AttackAction &attack, int &obj_x, int 
     return -1;
 }
 
+PositionInteger Map::get_vaccine_obj(const VaccineAction &vaccine, int &obj_x, int &obj_y) const {
+    const Agent *agent = vaccine.agent;
+    const AgentType *type = &vaccine.agent->get_type();
+    Direction dir = agent->get_dir();
+
+    int vacc_x_offset = type->vacc_x_offset, vacc_y_offset = type->vacc_y_offset;
+    int agent_x, agent_y;
+    int rela_x, rela_y;
+
+    agent->get_type().vaccine_range->num2delta(vaccine.action, rela_x, rela_y);
+
+    save_to_real(agent, agent_x, agent_y);
+    rela_to_abs(agent_x, agent_y, dir, vacc_x_offset + rela_x, vacc_y_offset + rela_y, obj_x, obj_y);
+
+    if (!in_board(obj_x, obj_y)) {
+        return -1;
+    }
+
+    PositionInteger pos_int = pos2int(obj_x, obj_y);
+
+    if (slots[pos_int].occupier == nullptr) {
+        return -1;
+    }
+
+    switch (slots[pos_int].occ_type) {
+        case OCC_AGENT:
+        {
+            Agent *obj = (Agent *) slots[pos_int].occupier;
+
+            if (agent->get_group() == obj->get_group()) { // same type
+                return -1;
+            } else {
+                return pos_int;
+            }
+            break;
+        }
+        case OCC_FOOD:
+            return pos_int;
+        default:
+            LOG(FATAL) << "invalid occ_type in Map::get_attack_obj";
+
+    }
+    return -1;
+}
+
 // do attack for agent, return kill_reward and dead_group
 Reward Map::do_attack(Agent *agent, PositionInteger pos_int, GroupHandle &dead_group) {
     // !! all the check should be done at Map::get_attack_obj
@@ -300,6 +345,34 @@ Reward Map::do_attack(Agent *agent, PositionInteger pos_int, GroupHandle &dead_g
                 set_channel_id(pos_int, -1);
                 delete food;
             }
+            break;
+        }
+        default:
+            LOG(FATAL) << "invalid occ_type in Map::do_attack";
+    }
+
+    return 0.0;
+}
+
+
+// do vaccine for agent, return vaccine_reward and immunized_group
+Reward Map::do_vaccine(Agent *agent, PositionInteger pos_int, GroupHandle &dead_group) {
+    // !! all the check should be done at Map::get_attack_obj
+
+    if (slots[pos_int].occupier == nullptr)  // dead
+        return 0.0;
+
+    switch(slots[pos_int].occ_type) {
+        case OCC_AGENT:
+        {
+            Agent *obj = ((Agent *)slots[pos_int].occupier);
+
+            bool vaccine = obj->be_vaccine();
+
+            if (vaccine)
+                agent->set_last_op(OP_VACCINE);
+            agent->set_op_obj(obj);
+            return 0.0;
             break;
         }
         default:

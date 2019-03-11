@@ -161,11 +161,12 @@ void RenderGenerator::render_a_frame(std::vector<Group> &groups, const Map &map)
             Position pos = agent.get_pos();
             int id = agent.get_id();
             int infected = agent.is_infected();
+            int immunized = agent.is_immunized();
             int hp = std::max(0, int(100 * agent.get_hp() / agent.get_type().hp));
             hp = std::min(hp, 100);
             int dir = dir2angle[(int)agent.get_dir()];
 
-            fout << id <<  " " <<  hp << " " << dir << " " << pos.x << " " << pos.y << " " << i << " " << infected << std::endl; //
+            fout << id <<  " " <<  hp << " " << dir << " " << pos.x << " " << pos.y << " " << i << " " << infected + immunized*2 << std::endl; //
         }
     }
 

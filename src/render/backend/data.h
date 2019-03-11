@@ -19,7 +19,7 @@ struct Coordinate {
 
 struct AgentData : public render::Unique {
     Coordinate position;
-    bool infected;
+    int infection_state; // 0: Healthy, 1: Infected, 2: Immunized
     int id, hp, direction;
     unsigned int groupID;
 };

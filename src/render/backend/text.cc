@@ -17,7 +17,7 @@ std::string Text::encode(const magent::render::AgentData &agent)const {
            + ' ' + std::to_string(agent.groupID)
            + ' ' + std::to_string(agent.direction)
            + ' ' + std::to_string(agent.hp)
-           + ' ' + std::to_string(agent.infected);
+           + ' ' + std::to_string(agent.infection_state);
 }
 
 std::string Text::encode(const magent::render::EventData &event)const {

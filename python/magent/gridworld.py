@@ -38,8 +38,10 @@ class GridWorld(Environment):
                 raise BaseException('unknown built-in game "' + config + '"')
 
         # create new game
+        print('Create Game')
         game = ctypes.c_void_p()
         _LIB.env_new_game(ctypes.byref(game), b"GridWorld")
+        print('Game Created')
         self.game = game
 
         # set global configuration
@@ -48,7 +50,7 @@ class GridWorld(Environment):
             'food_mode': bool, 'turn_mode': bool, 'minimap_mode': bool,
             'revive_mode': bool, 'goal_mode': bool,
             'embedding_size': int,
-            'render_dir': str,
+            'render_dir': str, 'infection_mode': bool
         }
 
         for key in config.config_dict:
@@ -62,12 +64,14 @@ class GridWorld(Environment):
             elif value_type is str:
                 _LIB.env_config_game(self.game, key.encode("ascii"), ctypes.c_char_p(config.config_dict[key]))
 
+        print('Register agent types')
         # register agent types
         for name in config.agent_type_dict:
             type_args = config.agent_type_dict[name]
 
             # special pre-process for view range and attack range
             for key in [x for x in type_args.keys()]:
+                print(name, key)
                 if key == "view_range":
                     val = type_args[key]
                     del type_args[key]
@@ -78,6 +82,12 @@ class GridWorld(Environment):
                     del type_args[key]
                     type_args["attack_radius"] = val.radius
                     type_args["attack_angle"]  = val.angle
+                elif key == "vaccine_range":
+                    print('not normal')
+                    val = type_args[key]
+                    del type_args[key]
+                    type_args["vaccine_radius"] = val.radius
+                    type_args["vaccine_angle"] = val.angle
 
             length = len(type_args)
             keys = (ctypes.c_char_p * length)(*[key.encode("ascii") for key in type_args.keys()])
@@ -85,6 +95,7 @@ class GridWorld(Environment):
 
             _LIB.gridworld_register_agent_type(self.game, name.encode("ascii"), length, keys, values)
 
+        print('All agent types registered')
         # serialize event expression, send to C++ engine
         self._serialize_event_exp(config)
 
@@ -92,10 +103,10 @@ class GridWorld(Environment):
         self.group_handles = []
         for i, item in enumerate(config.groups):
             handle = ctypes.c_int32()
-            infection_prop = ctypes.c_float(config.groups_init_infected_prop[i])
 
             if config.infection_mode:
-                print('infection mode', config.groups_init_infected_prop[i])
+                # print('infection mode', config.groups_init_infected_prop[i])
+                infection_prop = ctypes.c_float(config.groups_init_infected_prop[i])
                 _LIB.gridworld_new_group_infected(self.game, item.encode("ascii"), ctypes.byref(handle), infection_prop)
             else:
                 _LIB.gridworld_new_group(self.game, item.encode("ascii"), ctypes.byref(handle))
@@ -589,6 +600,8 @@ class EventNode:
     OP_IN_A_LINE = 9
     OP_ALIGN = 10
 
+    OP_VACCINE = 11
+
     # can extend more operation below
 
     def __init__(self):
@@ -617,6 +630,9 @@ class EventNode:
             node.inputs = [subject, x1, y1, x2, y2]
         elif predicate == 'attack':
             node.op = EventNode.OP_ATTACK
+            node.inputs = [subject, args[0]]
+        elif predicate == 'vaccine':
+            node.op = EventNode.OP_VACCINE
             node.inputs = [subject, args[0]]
         elif predicate == 'kill':
             node.op = EventNode.OP_KILL

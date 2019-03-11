@@ -80,7 +80,7 @@ void Frame::load(std::istream & handle) {
     try {
         for (unsigned int i = 0; i < nAgents; i++) {
             if (!(handle >> agents[i].id >> agents[i].hp >> agents[i].direction
-                         >> agents[i].position.x >> agents[i].position.y >> agents[i].groupID >> agents[i].infected)) {
+                         >> agents[i].position.x >> agents[i].position.y >> agents[i].groupID >> agents[i].infection_state)) {
                          //
                 throw RenderException("cannot read the next agent, map file may be broken");
             }

@@ -18,7 +18,7 @@ typedef enum {
     OP_AND, OP_OR, OP_NOT,
     /***** split *****/
     OP_KILL, OP_AT, OP_IN, OP_COLLIDE, OP_ATTACK, OP_DIE,
-    OP_IN_A_LINE, OP_ALIGN,
+    OP_IN_A_LINE, OP_ALIGN, OP_VACCINE,
     OP_NULL,
 } EventOp;
 
@@ -39,6 +39,7 @@ class Group;
 struct MoveAction;
 struct TurnAction;
 struct AttackAction;
+struct VaccineAction;
 
 // reward description
 class AgentSymbol;

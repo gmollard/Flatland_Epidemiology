@@ -110,7 +110,7 @@ int gridworld_new_group(EnvHandle game, const char *agent_type_Name, GroupHandle
 int gridworld_new_group_infected(EnvHandle game, const char *agent_type_Name, GroupHandle *group, float prop_infected) {
     LOG(TRACE) << "gridworld new infected group.  ";
     ((::magent::gridworld::GridWorld *)game)->new_group_infected(agent_type_Name, group, prop_infected);
-    ((::magent::gridworld::GridWorld *)game)->set_infection_mode();
+//    ((::magent::gridworld::GridWorld *)game)->set_infection_mode();
     return 0;
 }
 

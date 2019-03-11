@@ -89,7 +89,7 @@ void GridWorld::collect_related_symbol(EventNode &node) {
             node.infer_map.insert(node.node_input[0]->infer_map.begin(), node.node_input[0]->infer_map.end());
             break;
         // Binary-agent operation
-        case OP_KILL: case OP_COLLIDE: case OP_ATTACK:
+        case OP_KILL: case OP_COLLIDE: case OP_ATTACK: case OP_VACCINE:
             node.related_symbols.insert(node.symbol_input[0]);
             node.related_symbols.insert(node.symbol_input[1]);
             break;
@@ -114,7 +114,7 @@ void GridWorld::init_reward_description() {
             case OP_NOT:
                 node.node_input.push_back(&event_nodes[node.raw_parameter[0]]);
                 break;
-            case OP_KILL: case OP_COLLIDE: case OP_ATTACK:
+            case OP_KILL: case OP_COLLIDE: case OP_ATTACK: case OP_VACCINE:
                 node.symbol_input.push_back(&agent_symbols[node.raw_parameter[0]]);
                 node.symbol_input.push_back(&agent_symbols[node.raw_parameter[1]]);
                 node.infer_map.insert(std::make_pair(node.symbol_input[0], node.symbol_input[1]));
@@ -216,7 +216,7 @@ void GridWorld::init_reward_description() {
 bool GridWorld::calc_event_node(EventNode *node, RewardRule &rule) {
     bool ret;
     switch (node->op) {
-        case OP_ATTACK: case OP_KILL: case OP_COLLIDE: {
+        case OP_ATTACK: case OP_KILL: case OP_COLLIDE: case OP_VACCINE: {
             Agent *sub, *obj;
             // object must be an agent, cannot be a group !
             assert(!node->symbol_input[1]->is_all());

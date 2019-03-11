@@ -33,6 +33,10 @@ GridWorld::GridWorld() {
     counter_x = counter_y = nullptr;
 
     infection_mode = false;
+
+    std::random_device rd;
+    random_generator = std::mt19937(rd());
+    uniform_distribution = std::uniform_real_distribution<>(0,1);
 }
 
 GridWorld::~GridWorld() {
@@ -60,6 +64,10 @@ GridWorld::~GridWorld() {
             delete type.move_range;
             type.move_range = nullptr;
         }
+        if (type.vaccine_range != nullptr) {
+            delete type.vaccine_range;
+            type.vaccine_range = nullptr;
+        }
     }
 
     if (counter_x != nullptr)
@@ -71,9 +79,7 @@ GridWorld::~GridWorld() {
         delete [] move_buffers;
         delete [] turn_buffers;
     }
-    std::random_device rd;
-    random_generator = std::mt19937(rd());
-    uniform_distribution = std::uniform_real_distribution<>(0,1);
+
 }
 
 void GridWorld::reset() {
@@ -150,6 +156,8 @@ void GridWorld::set_config(const char *key, void *p_value) {
         render_generator.set_render("save_dir", strvalue);
     else if (strequ(key, "seed"))           // random seed
         random_engine.seed((unsigned long)ivalue);
+    else if (strequ(key, "infection_mode"))
+        infection_mode = true;
 
     else
         LOG(FATAL) << "invalid argument in GridWorld::set_config : " << key;
@@ -161,7 +169,7 @@ void GridWorld::register_agent_type(const char *name, int n, const char **keys, 
     if (agent_types.find(str) != agent_types.end())
         LOG(FATAL) << "duplicated name of agent type in GridWorld::register_agent_type : " << str;
 
-    agent_types.insert(std::make_pair(str, AgentType(n, str, keys, values, turn_mode)));
+    agent_types.insert(std::make_pair(str, AgentType(n, str, keys, values, turn_mode, infection_mode)));
 }
 
 void GridWorld::new_group(const char* agent_name, GroupHandle *group) {
@@ -458,8 +466,10 @@ void GridWorld::set_action(GroupHandle group, const int *actions) {
                     int to = agent->get_pos().x / bandwidth;
                     turn_buffers[to].push_back(TurnAction{agent, act - type.move_base});
                 }
-            } else {                             // attack
+            }  else if (act < type.vaccine_base) {                             // attack
                 attack_buffer.push_back(AttackAction{agent, act - type.attack_base});
+            } else {
+                vaccine_buffer.push_back(VaccineAction{agent, act - type.vaccine_base});
             }
         }
     } else {
@@ -472,14 +482,11 @@ void GridWorld::set_action(GroupHandle group, const int *actions) {
                 move_buffer_bound.push_back(MoveAction{agent, act - type.move_base});
             } else if (act < type.attack_base) { // turn
                 turn_buffer_bound.push_back(TurnAction{agent, act - type.move_base});
-            } else {                             // attack
+            } else if (act < type.vaccine_base) {                             // attack
                 attack_buffer.push_back(AttackAction{agent, act - type.attack_base});
+            } else {
+                vaccine_buffer.push_back(VaccineAction{agent, act - type.vaccine_base});
             }
-//            } else if (act < type.vaccine_base) {                             // attack
-//                attack_buffer.push_back(AttackAction{agent, act - type.attack_base});
-//            } else {
-//                attack_buffer.push_back(VaccineAction{agent, act - type.vaccine_base});
-//            }
         }
     }
 }
@@ -495,6 +502,7 @@ void GridWorld::step(int *done) {
 
     LOG(TRACE) << "gridworld step begin.  ";
     size_t attack_size = attack_buffer.size();
+    size_t vaccine_size = vaccine_buffer.size();
     size_t group_size  = groups.size();
 
     if (infection_mode) {
@@ -523,7 +531,8 @@ void GridWorld::step(int *done) {
 //                                pos_healthy.x - pos_infected.x, pos_healthy.y - pos_infected.y)) {
 //                            if (healthy_agent->get_pos().x == pos_infected.x + 1) {
                             float r = uniform_distribution(random_generator);
-                            if (dist <= radius and r < (healthy_agent->get_type().infection_probability)) {
+                            if (dist <= radius and r < (healthy_agent->get_type().infection_probability) and\
+                             (!healthy_agent->is_immunized())) {
                                     healthy_agent->infect();
                             }
                         }
@@ -532,6 +541,58 @@ void GridWorld::step(int *done) {
             }
         }
     }
+
+    // shuffle vaccines
+    for (int i = 0; i < vaccine_size; i++) {
+        int j = (int)random_engine() % (i+1);
+        std::swap(vaccine_buffer[i], vaccine_buffer[j]);
+    }
+
+    LOG(TRACE) << "vaccine.  ";
+//    std::vector<RenderAttackEvent> render_attack_buffer;
+    std::map<PositionInteger, int> vaccine_obj_counter;    // for statistic info
+
+    // attack
+//    #pragma omp parallel for reduction(merge: render_attack_buffer)
+    for (int i = 0; i < vaccine_size; i++) {
+        Agent *agent = vaccine_buffer[i].agent;
+
+        if (agent->is_dead())
+            continue;
+
+        int obj_x, obj_y;
+        PositionInteger obj_pos = map.get_vaccine_obj(vaccine_buffer[i], obj_x, obj_y);
+//        if (!first_render)
+//            render_vaccine_buffer.emplace_back(RenderAttackEvent{agent->get_id(), obj_x, obj_y});
+
+        if (obj_pos == -1) {  // attack blank block
+//            agent->add_reward(agent->get_type().attack_penalty);
+            continue;
+        }
+
+        if (stat) {
+            vaccine_obj_counter[obj_pos]++;
+        }
+
+        float reward = 0.0;
+        GroupHandle dead_group = -1;
+        #pragma omp critical
+        {
+            reward = map.do_vaccine(agent, obj_pos, dead_group);
+        }
+        agent->add_reward(reward);// + agent->get_type().attack_penalty); TODO: Add here vaccination penalty
+    }
+    vaccine_buffer.clear();
+//    if (!first_render)
+//        render_generator.set_attack_event(render_attack_buffer);
+
+//    if (stat) {
+//        for (auto iter : vaccine_obj_counter) {
+//            if (iter.second > 1) {
+//                stat_recorder.both_attack++;
+//            }
+//        }
+//    }
 
     // shuffle attacks
     for (int i = 0; i < attack_size; i++) {

@@ -330,7 +330,7 @@ function run() {
                         var group = parseInt(data[1][itAgents][3]);
                         var dir = parseInt(data[1][itAgents][4]);
                         var hp = parseInt(data[1][itAgents][5]);
-                        var infected = parseInt(data[1][itAgents][6]);
+                        var infection_state = parseInt(data[1][itAgents][6]);
                         if (!_mapStyles['group'].hasOwnProperty(group)) {
                             $.jGrowl('group ' + group.toString() + ' is not found in the configuration file', {
                                 position: 'bottom-right'
@@ -346,7 +346,7 @@ function run() {
                         } else if (dir === 0) {
                             x = x + _mapStyles['group'][group]['width'] - 1;
                         }
-                        _mapData[1][data[1][itAgents][0]] = [x, y, group, dir, hp, infected]
+                        _mapData[1][data[1][itAgents][0]] = [x, y, group, dir, hp, infection_state]
                     }
 
                     data[2] = data[2].split('|');
@@ -443,7 +443,7 @@ function _drawAgent() {
             _agentBodyCTX.beginPath();
             _agentBodyCTX.rotate(result[2]);
 
-            var infected = _mapData[1][agentID][5];
+            var infection_state = _mapData[1][agentID][5];
 
 //            function log(msg) {
 //                setTimeout(function() {
@@ -451,10 +451,12 @@ function _drawAgent() {
 //                }, 0);
 //            }
 
-            if (infected == 0) {
+            if (infection_state == 0) {
                 _agentBodyCTX.fillStyle = style['style'];
-            } else {
+            } else if (infection_state == 1) {
                 _agentBodyCTX.fillStyle = "rgba(0,0,0,1)";
+            } else {
+                _agentBodyCTX.fillStyle = "rgba(0,255,0,1)";
             }
 
             _agentBodyCTX.rect(

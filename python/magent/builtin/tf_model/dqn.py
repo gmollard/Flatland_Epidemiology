@@ -60,6 +60,8 @@ class DeepQNetwork(TFBaseModel):
         self.view_space = custom_view_space or env.get_view_space(handle)
         self.feature_space = custom_feature_space or env.get_feature_space(handle)
         self.num_actions  = env.get_action_space(handle)[0]
+        print(f'----------------------------------  {self.num_actions} -----------------------------')
+
 
         self.batch_size   = batch_size
         self.learning_rate= learning_rate

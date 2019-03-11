@@ -116,10 +116,13 @@ private:
 
     // action buffer
     std::vector<AttackAction> attack_buffer;
+    // vaccine buffer
+    std::vector<VaccineAction> vaccine_buffer;
     // split the events to small regions and boundary for parallel
     int NUM_SEP_BUFFER;
     std::vector<MoveAction> *move_buffers, move_buffer_bound;
     std::vector<TurnAction> *turn_buffers, turn_buffer_bound;
+
 
     // render
     RenderGenerator render_generator;
@@ -152,6 +155,7 @@ public:
 
         init_reward();
         infected = false;
+        immunized = false;
     }
 
     Position &get_pos()             { return pos; }
@@ -222,6 +226,20 @@ public:
         }
     }
 
+    bool be_vaccine() {
+        if ((!infected) and !immunized) {
+            std::cout << "Immunized !!!" << std::endl;
+            immunized = true;
+            return true;
+        } else {
+            return false;
+        }
+
+
+    }
+
+    bool is_immunized() const { return immunized; }
+
     GroupHandle get_group() const { return group; }
     int get_index() const { return index; }
     void set_index(int i) { index = i; }
@@ -267,6 +285,7 @@ private:
     int goal_radius;
 
     bool infected;
+    bool immunized;
 };
 
 
@@ -357,7 +376,7 @@ struct AttackAction {
 struct VaccineAction {
     Agent *agent;
     int action;
-}
+};
 
 } // namespace magent
 } // namespace gridworld
