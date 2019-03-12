@@ -126,6 +126,101 @@ void Map::average_pooling_group(float *group_buffer, int x0, int y0, int width, 
     }
 }
 
+void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, const int *channel_trans, const Range *range,
+                       int n_channel, int width, int height, int view_x_offset, int view_y_offset,
+                       int view_left_top_x, int view_left_top_y,
+                       int view_right_bottom_x, int view_right_bottom_y) const {
+
+
+    // convert coordinates between absolute map and relative view
+    Direction dir = agent->get_dir();
+
+    int agent_x, agent_y;
+    int eye_x, eye_y;
+    int x1, y1, x2, y2;
+
+    save_to_real(agent, agent_x, agent_y);
+    rela_to_abs(agent_x, agent_y, dir, view_x_offset, view_y_offset, eye_x, eye_y);
+    rela_to_abs(eye_x, eye_y, dir, view_left_top_x, view_left_top_y, x1, y1);
+    rela_to_abs(eye_x, eye_y, dir, view_right_bottom_x, view_right_bottom_y, x2, y2);
+
+    // find the coordinate of start point and end point in map
+    int start_x, start_y, end_x, end_y;
+    start_x = std::max(std::min(x1, x2), 0);
+    end_x = std::min(std::max(x1, x2), w - 1);
+    start_y = std::max(std::min(y1, y2), 0);
+    end_y = std::min(std::max(y1, y2), h - 1);
+
+    NDPointer<float, 3> buffer(linear_buffer, {height, width, n_channel});
+
+    // build projection from map coordinate to view buffer coordinate
+    int view_x, view_y;
+    int view_rela_x, view_rela_y;
+    abs_to_rela(eye_x, eye_y, dir, start_x, start_y, view_rela_x, view_rela_y);
+    view_x = view_rela_x - view_left_top_x;
+    view_y = view_rela_y - view_left_top_y;
+
+    int *p_view_inner, *p_view_outer;
+    int d_view_inner, d_view_outer;
+    switch (dir) {
+        case NORTH:
+            p_view_inner = &view_y; p_view_outer = &view_x;
+            d_view_inner = 1; d_view_outer = 1;
+            break;
+        case SOUTH:
+            p_view_inner = &view_y; p_view_outer = &view_x;
+            d_view_inner = -1; d_view_outer = -1;
+            break;
+        case EAST:
+            p_view_inner = &view_x; p_view_outer = &view_y;
+            d_view_inner = 1; d_view_outer = -1;
+            break;
+        case WEST:
+            p_view_inner = &view_x; p_view_outer = &view_y;
+            d_view_inner = -1; d_view_outer = 1;
+            break;
+        default:
+            LOG(FATAL) << "invalid direction in Map::extract_view";
+    }
+
+    int start_inner = *p_view_inner;
+
+
+    for (int x = start_x; x <= end_x; x++) {
+        PositionInteger pos_int = pos2int(x, start_y);
+        for (int y = start_y; y <= end_y; y++) {
+            int channel_id = channel_ids[pos_int];
+            if (channel_id != -1 && range->is_in(view_y, view_x)) {
+                if (slots[pos_int].occ_type != OCC_AGENT) { // Wall
+                    buffer.at(view_y, view_x, 0) = 1;
+                } else if (slots[pos_int].occupier != nullptr ) {
+                    Agent *p = ((Agent *) slots[pos_int].occupier);
+
+                    if (p->get_id() == agent->get_id() and p->get_type().name == agent->get_type().name) {
+                        buffer.at(view_y, view_x, 1) = 1;
+                    } else if (p->get_type().name == "tiger") {
+                        buffer.at(view_y, view_x, 2) = 1;
+                    } else {
+                        if (!p->is_infected() and !p->is_immunized()){
+                            buffer.at(view_y, view_x, 3) = 1;
+                        } else if (p->is_infected()) {
+                            buffer.at(view_y, view_x, 4) = 1;
+                        } else {
+                            buffer.at(view_y, view_x, 5) = 1;
+                        }
+                    }
+                }
+            }
+            *p_view_inner += d_view_inner;
+            pos_int += MAP_INNER_Y_ADD;
+        }
+        *p_view_inner = start_inner;
+        *p_view_outer += d_view_outer;
+    }
+}
+
+
+
 void Map::extract_view(const Agent *agent, float *linear_buffer, const int *channel_trans, const Range *range,
                        int n_channel, int width, int height, int view_x_offset, int view_y_offset,
                        int view_left_top_x, int view_left_top_y,

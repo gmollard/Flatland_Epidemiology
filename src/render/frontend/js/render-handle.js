@@ -453,17 +453,20 @@ function _drawAgent() {
 
             if (infection_state == 0) {
                 _agentBodyCTX.fillStyle = style['style'];
+                _agentHPCTX.fillStyle = style['style'];
             } else if (infection_state == 1) {
-                _agentBodyCTX.fillStyle = "rgba(0,0,0,1)";
+                _agentBodyCTX.fillStyle = "rgba(153,0,0,1)";
+                _agentHPCTX.fillStyle = "rgba(153,0,0,1)";
             } else {
-                _agentBodyCTX.fillStyle = "rgba(0,255,0,1)";
+                _agentBodyCTX.fillStyle = "rgba(0,153,0,1)";
+                _agentHPCTX.fillStyle = "rgba(0,153,0,1)";
             }
 
             _agentBodyCTX.rect(
-                originXMaster * gridSize,
-                originYMaster * gridSize,
-                style['height'] * gridSize,
-                style['width'] * gridSize
+                originXMaster * gridSize + 0.1 * style['width'] * gridSize,
+                originYMaster * gridSize + 0.1 * style['width'] * gridSize,
+                style['height'] * gridSize - 0.1 * style['width'] * gridSize,
+                style['width'] * gridSize - 0.1 * style['width'] * gridSize
             );
             _agentBodyCTX.fill();
             _agentBodyCTX.rotate(-result[2]);
@@ -507,7 +510,8 @@ function _drawAgent() {
                 _agentRangeCTX.fill();
                 _agentRangeCTX.rotate(-result[2]);
 
-                if (gridSize >= 6) {
+                //if (gridSize >= 6) {
+                if (false) {
                     _agentHPCTX.beginPath();
                     _agentHPCTX.rotate(result[2]);
                     _agentHPCTX.rect(
@@ -518,11 +522,10 @@ function _drawAgent() {
                     );
                     _agentHPCTX.strokeStyle = "rgba(0,0,0,1)";
                     //_agentHPCTX.stroke();
-                    _agentHPCTX.fillStyle = "rgba(255,255,255,1)";
+                    //_agentHPCTX.fillStyle = "rgba(255,255,255,1)";
                     _agentHPCTX.fill();
 
                     _agentHPCTX.beginPath();
-                    _agentHPCTX.fillStyle = style['style'];
                     var hp;
                     var rate = Math.min(_mapAnimateTick, ANIMATE_STEP) / ANIMATE_STEP;
                     if (_mapLastData !== undefined && _mapLastData[1].hasOwnProperty(agentID)) {
@@ -532,9 +535,11 @@ function _drawAgent() {
                     }
                     _agentHPCTX.rect(
                         originXMaster * gridSize,
-                        originYMaster * gridSize + (100 - hp) / 100 * style['width'] * gridSize,
-                        gridSize / 4,
-                        hp / 100 * style['width'] * gridSize
+                        //originYMaster * gridSize + (100 - hp) / 100 * style['width'] * gridSize,
+                        originYMaster * gridSize,
+                        gridSize / 10,
+                        //hp / 100 * style['width'] * gridSize
+                        style['width'] * gridSize
                     );
                     _agentHPCTX.fill();
                     _agentHPCTX.rotate(-result[2]);

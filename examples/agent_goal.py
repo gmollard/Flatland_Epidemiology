@@ -118,10 +118,15 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
         reward = 0
         if train_id != -1:
             rewards = env.get_reward(handles[train_id])
+            # print(sum(env.get_reward(handles[train_id])) / env.get_num(handles[train_id]))
+            rewards += sum(env.get_reward(handles[0])) / env.get_num(handles[train_id])
+
             alives  = env.get_alive(handles[train_id])
-            total_reward += sum(rewards)
-            sample_buffer.record_step(ids[train_id], obs[train_id], acts[train_id], rewards, alives)
             reward = sum(rewards)
+            total_reward += reward
+            sample_buffer.record_step(ids[train_id], obs[train_id], acts[train_id], rewards, alives)
+
+
         # for i in range(n):
         #     rewards = env.get_reward(handles[i])
         #     if train_id != -1 and i == train_id:
@@ -175,7 +180,7 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_every", type=int, default=500)
-    parser.add_argument("--n_round", type=int, default=11100)
+    parser.add_argument("--n_round", type=int, default=30000)
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--load_from", type=int)
     parser.add_argument("--agent_generator", default='random_spread', choices=['random_spread',

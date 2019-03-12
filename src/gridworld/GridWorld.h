@@ -207,7 +207,14 @@ public:
     void set_absorbed(bool value) { absorbed = value; }
 
     bool is_infected() const { return infected; }
-    void infect() { infected = true; }
+    void infect() {
+     infected = true;
+     set_last_op(OP_INFECTED);
+    }
+
+    void infect_initialization() {
+     infected = true;
+    }
 
     bool starve() {
         if (type.step_recover > 0) {
@@ -228,7 +235,6 @@ public:
 
     bool be_vaccine() {
         if ((!infected) and !immunized) {
-            std::cout << "Immunized !!!" << std::endl;
             immunized = true;
             return true;
         } else {

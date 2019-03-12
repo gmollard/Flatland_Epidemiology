@@ -601,7 +601,7 @@ class EventNode:
     OP_ALIGN = 10
 
     OP_VACCINE = 11
-
+    OP_INFECTED = 12
     # can extend more operation below
 
     def __init__(self):
@@ -634,6 +634,9 @@ class EventNode:
         elif predicate == 'vaccine':
             node.op = EventNode.OP_VACCINE
             node.inputs = [subject, args[0]]
+        elif predicate == 'infected':
+            node.op = EventNode.OP_INFECTED
+            node.inputs = [subject]
         elif predicate == 'kill':
             node.op = EventNode.OP_KILL
             node.inputs = [subject, args[0]]

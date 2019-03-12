@@ -318,7 +318,7 @@ void GridWorld::add_agents(GroupHandle group, int n, const char *method,
          << " agents..." << std::endl;
         for (int i = 0; i < n*groups[group].get_prop_infected_init(); i++) {
             std::cout << "Infecting agent " << i << "." << std::endl;
-            agents[i]->infect();
+            agents[i]->infect_initialization();
         }
     }
 }
@@ -398,9 +398,15 @@ void GridWorld::get_observation(GroupHandle group, float **linear_buffers) {
     for (int i = 0; i < agent_size; i++) {
         Agent *agent = agents[i];
         // get spatial view
-        map.extract_view(agent, view_buffer.data + i*view_height*view_width*n_channel, &channel_trans[0], range,
+        if (infection_mode) {
+            map.extract_view_infection_mode(agent, view_buffer.data + i*view_height*view_width*n_channel, &channel_trans[0], range,
                          n_channel, view_width, view_height, view_x_offset, view_y_offset,
                          view_left_top_x, view_left_top_y, view_right_bottom_x, view_right_bottom_y);
+        } else {
+            map.extract_view(agent, view_buffer.data + i*view_height*view_width*n_channel, &channel_trans[0], range,
+                             n_channel, view_width, view_height, view_x_offset, view_y_offset,
+                             view_left_top_x, view_left_top_y, view_right_bottom_x, view_right_bottom_y);
+        }
 
         if (minimap_mode) {
             int self_x = agent->get_pos().x / scale_w;
@@ -519,17 +525,11 @@ void GridWorld::step(int *done) {
                     for (auto healthy_agent: group.get_agents()) {
                         if (!healthy_agent->is_infected()) {
                             Position pos_healthy = healthy_agent->get_pos();
-//                            std::cout << pos_infected.x << ", " << pos_infected.y << "   /    ";
-//                            std::cout << pos_healthy.x << ", " << pos_healthy.y << std::endl;
-//                            std::cout << (healthy_agent->get_type().infection_range)->is_in(
-//                                pos_healthy.x - pos_infected.x, pos_healthy.y - pos_infected.y) << std::endl;
 
                             float radius = healthy_agent->get_type().infection_radius;
                             float dist = sqrt(pow(pos_healthy.x - pos_infected.x, 2) +
                              pow(pos_healthy.y - pos_infected.y, 2));
-//                            if ((healthy_agent->get_type().infection_range)->is_in(
-//                                pos_healthy.x - pos_infected.x, pos_healthy.y - pos_infected.y)) {
-//                            if (healthy_agent->get_pos().x == pos_infected.x + 1) {
+
                             float r = uniform_distribution(random_generator);
                             if (dist <= radius and r < (healthy_agent->get_type().infection_probability) and\
                              (!healthy_agent->is_immunized())) {
@@ -981,8 +981,12 @@ void GridWorld::get_info(GroupHandle group, const char *name, void *void_buffer)
     } else if (strequ(name, "action_space")) {  // int
         int_buffer[0] = (int)groups[group].get_type().action_space.size();
     } else if (strequ(name, "view_space")) {    // int
-        // the following is necessary! user can call get_view_space before reset
-        groups[group].get_type().n_channel = group2channel((GroupHandle)groups.size());
+        if (infection_mode) {
+            groups[group].get_type().n_channel = 6;
+        } else {
+            // the following is necessary! user can call get_view_space before reset
+            groups[group].get_type().n_channel = group2channel((GroupHandle)groups.size());
+        }
         int_buffer[0] = groups[group].get_type().view_range->get_height();
         int_buffer[1] = groups[group].get_type().view_range->get_width();
         int_buffer[2] = groups[group].get_type().n_channel;

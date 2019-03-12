@@ -94,7 +94,7 @@ void GridWorld::collect_related_symbol(EventNode &node) {
             node.related_symbols.insert(node.symbol_input[1]);
             break;
         // Unary-agent operation
-        case OP_AT: case OP_IN: case OP_DIE: case OP_IN_A_LINE: case OP_ALIGN:
+        case OP_AT: case OP_IN: case OP_DIE: case OP_IN_A_LINE: case OP_ALIGN: case OP_INFECTED:
             node.related_symbols.insert(node.symbol_input[0]);
             break;
         default:
@@ -131,7 +131,7 @@ void GridWorld::init_reward_description() {
                 node.int_input.push_back(node.raw_parameter[3]);
                 node.int_input.push_back(node.raw_parameter[4]);
                 break;
-            case OP_DIE: case OP_IN_A_LINE: case OP_ALIGN:
+            case OP_DIE: case OP_IN_A_LINE: case OP_ALIGN: case OP_INFECTED:
                 node.symbol_input.push_back(&agent_symbols[node.raw_parameter[0]]);
                 break;
             default:
@@ -347,6 +347,23 @@ bool GridWorld::calc_event_node(EventNode *node, RewardRule &rule) {
             } else {
                 Agent *sub = (Agent *)node->symbol_input[0]->entity;
                 ret = sub->is_dead();
+            }
+        }
+            break;
+         case OP_INFECTED: {
+            if (node->symbol_input[0]->is_all()) {
+                std::cout << "ISALL" << std::endl;
+                const std::vector<Agent*> &agents = groups[node->symbol_input[0]->group].get_agents();
+                ret = true;
+                for (int i = 0; i < agents.size(); i++) {
+                    if (!agents[i]->is_infected()) {
+                        ret = false;
+                        break;
+                    }
+                }
+            } else {
+                Agent *sub = (Agent *)node->symbol_input[0]->entity;
+                ret = sub->is_infected();
             }
         }
             break;

@@ -59,8 +59,8 @@ void RenderGenerator::gen_config(std::vector<Group> &group, int w, int h) {
     std::ofstream f_config(save_dir + "/" + "config.json");
 
     int colors[][3] = {
-        {192, 64, 64},
-        {64, 64, 192},
+        {64,64,192},
+        {255,255,10},
         {64, 192, 64},
         {64, 64, 64},
     };
