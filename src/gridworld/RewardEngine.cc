@@ -363,7 +363,8 @@ bool GridWorld::calc_event_node(EventNode *node, RewardRule &rule) {
                 }
             } else {
                 Agent *sub = (Agent *)node->symbol_input[0]->entity;
-                ret = sub->is_infected();
+                ret = (sub->get_last_op() == OP_INFECTED);
+		sub->set_last_op(OP_NULL);
             }
         }
             break;

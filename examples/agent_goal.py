@@ -10,6 +10,7 @@ import numpy as np
 
 import magent
 from magent.builtin.rule_model import RandomActor
+import cv2
 
 
 def generate_map(env, map_size, handles, agent_generator):
@@ -107,6 +108,10 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
             acts[i] = models[i].infer_action(obs[i], ids[i], policy='e_greedy', eps=eps)
             env.set_action(handles[i], acts[i])
 
+            if i == 1 and n_step == 0:
+                print(obs[1][0][0].shape)
+                for j in range(6):
+                    cv2.imwrite(f'obs_{j}.png', 255*obs[i][0][0][:,:,j])
 
         # simulate one step
         n_step += 1

@@ -352,10 +352,12 @@ void GridWorld::get_observation(GroupHandle group, float **linear_buffers) {
                                  view_right_bottom_x, view_right_bottom_y);
 
     // to make channel layout in observation symmetric to every group
-    std::vector<int> channel_trans = make_channel_trans(group,
-                                                        group2channel(0),
-                                                        type.n_channel,
-                                                        n_group);
+    std::vector<int> channel_trans(0,5);
+    if (!infection_mode) {
+        channel_trans = make_channel_trans(group, group2channel(0),
+                                type.n_channel,
+                                n_group);
+    }
 
     // build minimap
     NDPointer<float, 3> minimap(nullptr, {{view_height, view_width, n_group}});
@@ -1055,6 +1057,8 @@ std::vector<int> GridWorld::make_channel_trans(
 }
 
 int GridWorld::group2channel(GroupHandle group) {
+    if (infection_mode)
+        return 6;
     int base = 1;
     int scale = 2;
     if (food_mode)

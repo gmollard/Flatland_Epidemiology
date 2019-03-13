@@ -190,13 +190,13 @@ void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, 
         PositionInteger pos_int = pos2int(x, start_y);
         for (int y = start_y; y <= end_y; y++) {
             int channel_id = channel_ids[pos_int];
-            if (channel_id != -1 && range->is_in(view_y, view_x)) {
-                if (slots[pos_int].occ_type != OCC_AGENT) { // Wall
+            if (range->is_in(view_y, view_x)) {
+                if (slots[pos_int].slot_type == OBSTACLE) { // Wall
                     buffer.at(view_y, view_x, 0) = 1;
-                } else if (slots[pos_int].occupier != nullptr ) {
+                } else if (slots[pos_int].occupier != nullptr && slots[pos_int].occ_type == OCC_AGENT) {
                     Agent *p = ((Agent *) slots[pos_int].occupier);
 
-                    if (p->get_id() == agent->get_id() and p->get_type().name == agent->get_type().name) {
+                    if (p->get_id() == agent->get_id() && p->get_type().name == agent->get_type().name) {
                         buffer.at(view_y, view_x, 1) = 1;
                     } else if (p->get_type().name == "tiger") {
                         buffer.at(view_y, view_x, 2) = 1;
@@ -217,6 +217,28 @@ void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, 
         *p_view_inner = start_inner;
         *p_view_outer += d_view_outer;
     }
+
+//        // scan the map
+//    for (int x = start_x; x <= end_x; x++) {
+//        PositionInteger pos_int = pos2int(x, start_y);
+//        for (int y = start_y; y <= end_y; y++) {
+//            int channel_id = channel_ids[pos_int];
+//
+//            if (channel_id != -1 && range->is_in(view_y, view_x)) {
+//                channel_id = channel_trans[channel_id];
+//                buffer.at(view_y, view_x, channel_id) = 1;
+//                if (slots[pos_int].occupier != nullptr && slots[pos_int].occ_type == OCC_AGENT) { // is agent
+//                    Agent *p = ((Agent *) slots[pos_int].occupier);
+//                    buffer.at(view_y, view_x, channel_id + 1) = p->get_hp() / p->get_type().hp; // normalize hp
+//                }
+//            }
+//
+//            *p_view_inner += d_view_inner;
+//            pos_int += MAP_INNER_Y_ADD;
+//        }
+//        *p_view_inner = start_inner;
+//        *p_view_outer += d_view_outer;
+//    }
 }
 
 
