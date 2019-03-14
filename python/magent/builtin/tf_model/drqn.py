@@ -326,7 +326,7 @@ class DeepRecurrentQNetwork(TFBaseModel):
         replay_lens_sum = np.sum(self.replay_buffer_lens)
         weight = np.array(self.replay_buffer_lens, dtype=np.float32) / replay_lens_sum
 
-        n_batches = self.train_freq * add_num / (batch_size * (unroll_step - self.skip_error))
+        n_batches = int(self.train_freq * add_num / (batch_size * (unroll_step - self.skip_error)))
         if n_batches == 0:
             return 0, 0
 

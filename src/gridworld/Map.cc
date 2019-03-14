@@ -484,7 +484,7 @@ Reward Map::do_vaccine(Agent *agent, PositionInteger pos_int, GroupHandle &dead_
         {
             Agent *obj = ((Agent *)slots[pos_int].occupier);
 
-            bool vaccine = obj->be_vaccine();
+            bool vaccine = obj->be_vaccine(agent);
 
             if (vaccine)
                 agent->set_last_op(OP_VACCINE);

@@ -7,6 +7,7 @@
 
 #include "RewardEngine.h"
 #include "GridWorld.h"
+#include <math.h>
 
 namespace magent {
 namespace gridworld {
@@ -363,8 +364,9 @@ bool GridWorld::calc_event_node(EventNode *node, RewardRule &rule) {
                 }
             } else {
                 Agent *sub = (Agent *)node->symbol_input[0]->entity;
+//                ret = (sub->is_infected());
                 ret = (sub->get_last_op() == OP_INFECTED);
-		sub->set_last_op(OP_NULL);
+                sub->set_last_op(OP_NULL);
             }
         }
             break;
@@ -401,7 +403,11 @@ void GridWorld::calc_rule(std::vector<AgentSymbol *> &input_symbols,
                     groups[sym->group].add_reward(rule.values[i]);
                 } else {
                     Agent* agent = (Agent *)sym->entity;
+//                    if (rule.on->op == OP_VACCINE) {
+//                        agent->add_reward(-exp(agent->get_vaccines_done()*1.0));
+//                    } else {
                     agent->add_reward(rule.values[i]);
+//                    }
                 }
             }
         }

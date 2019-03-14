@@ -42,6 +42,8 @@ int env_render_next_file(EnvHandle game);
 int gridworld_register_agent_type(EnvHandle game, const char *name, int n, const char **keys, float *values);
 int gridworld_new_group(EnvHandle game, const char *agent_type_name, GroupHandle *group);
 int gridworld_new_group_infected(EnvHandle game, const char *agent_type_name, GroupHandle *group, float prop_infected);
+int gridworld_get_num_infected(EnvHandle game, GroupHandle group, int *buffer);
+int gridworld_get_num_immunized(EnvHandle game, GroupHandle group, int *buffer);
 int gridworld_add_agents(EnvHandle game, GroupHandle group, int n, const char *method,
                          const int *pos_x, const int *pos_y, const int *dir);
 

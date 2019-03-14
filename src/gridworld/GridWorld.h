@@ -76,6 +76,10 @@ public:
     float get_prop_infected_init(GroupHandle group) const;
     void set_infection_mode();
 
+    int get_num_infected(GroupHandle group);
+    int get_num_immunized(GroupHandle group);
+
+
 private:
     // reward description
     void init_reward_description();
@@ -156,6 +160,7 @@ public:
         init_reward();
         infected = false;
         immunized = false;
+        vaccines_done = 0;
     }
 
     Position &get_pos()             { return pos; }
@@ -187,6 +192,7 @@ public:
         op_obj = nullptr;
         be_involved = false;
     }
+
     Reward get_reward()         { return next_reward; }
     Reward get_last_reward()    { return last_reward; }
     void add_reward(Reward add) { next_reward += add; }
@@ -233,9 +239,10 @@ public:
         }
     }
 
-    bool be_vaccine() {
-        if ((!infected) and !immunized) {
+    bool be_vaccine(Agent *agent) {
+        if (!infected and !immunized) {
             immunized = true;
+            agent->vaccines_done += 1;
             return true;
         } else {
             return false;
@@ -265,6 +272,8 @@ public:
         goal_radius = radius;
     }
 
+    int get_vaccines_done() const {return vaccines_done;}
+
 private:
     int id;
     bool dead;
@@ -292,6 +301,7 @@ private:
 
     bool infected;
     bool immunized;
+    int vaccines_done;
 };
 
 

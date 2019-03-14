@@ -432,6 +432,9 @@ void GridWorld::get_observation(GroupHandle group, float **linear_buffers) {
         feature_buffer.at(i, embedding_size + agent->get_action()) = 1;
         // last reward
         feature_buffer.at(i, embedding_size + n_action) = agent->get_last_reward();
+//        if (infection_mode) {
+//            feature_buffer.at(i, embedding_size + n_action + 1) = agent->get_vaccines_done();
+//        }
         if (minimap_mode) { // absolute coordination
             feature_buffer.at(i, embedding_size + n_action + 1) = (float) pos.x / width;
             feature_buffer.at(i, embedding_size + n_action + 2) = (float) pos.y / height;
@@ -513,36 +516,7 @@ void GridWorld::step(int *done) {
     size_t vaccine_size = vaccine_buffer.size();
     size_t group_size  = groups.size();
 
-    if (infection_mode) {
-        for (auto &group : groups) {
-            if (group.get_prop_infected_init() != 0.0) {
-                std::vector<Position> infected_positions;
-                for (auto infected_agent: group.get_agents()) {
-                    if (infected_agent->is_infected()) {
-                        Position pos_infected = infected_agent->get_pos();
-                        infected_positions.push_back(pos_infected);
-                    }
-                }
-                for (auto pos_infected : infected_positions) {
-                    for (auto healthy_agent: group.get_agents()) {
-                        if (!healthy_agent->is_infected()) {
-                            Position pos_healthy = healthy_agent->get_pos();
 
-                            float radius = healthy_agent->get_type().infection_radius;
-                            float dist = sqrt(pow(pos_healthy.x - pos_infected.x, 2) +
-                             pow(pos_healthy.y - pos_infected.y, 2));
-
-                            float r = uniform_distribution(random_generator);
-                            if (dist <= radius and r < (healthy_agent->get_type().infection_probability) and\
-                             (!healthy_agent->is_immunized())) {
-                                    healthy_agent->infect();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     // shuffle vaccines
     for (int i = 0; i < vaccine_size; i++) {
@@ -595,6 +569,37 @@ void GridWorld::step(int *done) {
 //            }
 //        }
 //    }
+
+    if (infection_mode) {
+        for (auto &group : groups) {
+            if (group.get_prop_infected_init() != 0.0) {
+                std::vector<Position> infected_positions;
+                for (auto infected_agent: group.get_agents()) {
+                    if (infected_agent->is_infected()) {
+                        Position pos_infected = infected_agent->get_pos();
+                        infected_positions.push_back(pos_infected);
+                    }
+                }
+                for (auto pos_infected : infected_positions) {
+                    for (auto healthy_agent: group.get_agents()) {
+                        if (!healthy_agent->is_infected()) {
+                            Position pos_healthy = healthy_agent->get_pos();
+
+                            float radius = healthy_agent->get_type().infection_radius;
+                            float dist = sqrt(pow(pos_healthy.x - pos_infected.x, 2) +
+                             pow(pos_healthy.y - pos_infected.y, 2));
+
+                            float r = uniform_distribution(random_generator);
+                            if (dist <= radius and r < (healthy_agent->get_type().infection_probability) and\
+                             (!healthy_agent->is_immunized())) {
+                                    healthy_agent->infect();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // shuffle attacks
     for (int i = 0; i < attack_size; i++) {
@@ -758,11 +763,33 @@ void GridWorld::step(int *done) {
     }
     *done = (int)(live_ct < groups.size());
 
+    if (infection_mode) {
+       *done = (int)(get_num_infected(0) + get_num_immunized(0) == groups[0].get_size());
+    }
+
     size_t rule_size = reward_rules.size();
     for (int i = 0; i < rule_size; i++) {
         if (reward_rules[i].trigger && reward_rules[i].is_terminal)
             *done = (int)true;
     }
+}
+
+int GridWorld::get_num_infected(GroupHandle group) {
+    int num_infected = 0;
+    for (auto agent : groups[group].get_agents()) {
+        if (agent->is_infected())
+            num_infected++;
+    }
+    return num_infected;
+}
+
+int GridWorld::get_num_immunized(GroupHandle group) {
+    int num_immunized = 0;
+    for (auto agent : groups[group].get_agents()) {
+        if (agent->is_immunized())
+            num_immunized++;
+    }
+    return num_immunized;
 }
 
 void GridWorld::clear_dead() {
@@ -1076,6 +1103,8 @@ int GridWorld::get_feature_size(GroupHandle group) {
         feature_space += 2;
     if (minimap_mode)  // x, y coordinate
         feature_space += 2;
+//    if (infection_mode) // number of vaccines already done
+//        feature_space +=1
     return feature_space;
 }
 

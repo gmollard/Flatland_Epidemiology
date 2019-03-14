@@ -361,6 +361,16 @@ class GridWorld(Environment):
                           buf.ctypes.data_as(ctypes.POINTER(ctypes.c_int32)))
         return buf
 
+    def get_num_infected(self, handle):
+        buf = np.empty(1, dtype=np.int32)
+        _LIB.gridworld_get_num_infected(self.game, handle, buf.ctypes.data_as(ctypes.POINTER(ctypes.c_int32)))
+        return buf
+
+    def get_num_immunized(self, handle):
+        buf = np.empty(1, dtype=np.int32)
+        _LIB.gridworld_get_num_immunized(self.game, handle, buf.ctypes.data_as(ctypes.POINTER(ctypes.c_int32)))
+        return buf
+
     def get_alive(self, handle):
         """ get alive status of agents in a group
 
