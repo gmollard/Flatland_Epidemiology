@@ -125,9 +125,10 @@ int gridworld_get_num_immunized(EnvHandle game, GroupHandle group, int *buffer) 
 }
 
 int gridworld_add_agents(EnvHandle game, GroupHandle group, int n, const char *method,
-                         const int *pos_x, const int *pos_y, const int *dir) {
+                         const int *pos_x, const int *pos_y, const int *dir, int n_infected,
+                         const int *infected_ids) {
     LOG(TRACE) << "gridworld add agents.  ";
-    ((::magent::gridworld::GridWorld *)game)->add_agents(group, n, method, pos_x, pos_y, dir);
+    ((::magent::gridworld::GridWorld *)game)->add_agents(group, n, method, pos_x, pos_y, dir, n_infected, infected_ids);
     return 0;
 }
 

@@ -403,11 +403,14 @@ void GridWorld::calc_rule(std::vector<AgentSymbol *> &input_symbols,
                     groups[sym->group].add_reward(rule.values[i]);
                 } else {
                     Agent* agent = (Agent *)sym->entity;
-//                    if (rule.on->op == OP_VACCINE) {
-//                        agent->add_reward(-exp(agent->get_vaccines_done()*1.0));
-//                    } else {
+                    if (rule.on->op == OP_VACCINE) {
+                        if (agent->get_vaccines_done() < 4)
+                            agent->add_reward(1);
+                        else
+                            agent->add_reward(-exp((agent->get_vaccines_done()-4.0)*1.0));
+                    } else {
                     agent->add_reward(rule.values[i]);
-//                    }
+                    }
                 }
             }
         }

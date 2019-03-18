@@ -40,6 +40,37 @@ def generate_map(env, map_size, handles, agent_generator):
 
             env.add_agents(handles[0], method="custom", pos=deer_pos)
 
+    elif agent_generator == 'random_static_clusters':
+        n_deers_per_cluster = 16
+        x_coords = np.arange(10, map_size - 10, 20)
+        y_coords = np.arange(10, map_size - 10, 20)
+        deer_pos = []
+        for x in x_coords:
+            for y in y_coords:
+                for i in range(x + 1, x + 17, 2):
+                    for j in range(y + 1, y + 17, 2):
+                        deer_pos.append((i, j))
+
+        infected_ids = [np.random.randint(0, 64), 64 + np.random.randint(0, 64),
+                        64 * 2 + np.random.randint(0, 64), 64 * 3 + np.random.randint(0, 64)]
+
+        env.add_agents(handles[0], method="custom_infection", pos=deer_pos, infected=infected_ids)
+
+        tiger_pos = []
+        for x in x_coords:
+            for y in y_coords:
+               tiger_pos.append((x + 8, y+17))
+               tiger_pos.append((x + 8, y - 2))
+               tiger_pos.append((x - 2, y+8))
+               tiger_pos.append((x +17, y+8))
+                # dir = np.random.uniform(-1, 1, 2)
+                # dir = dir / np.linalg.norm(dir)
+                # tiger_pos.append((x + 6 + dir[0] * 6, y + 6 + dir[1] * 6))
+
+        env.add_agents(handles[1], method="custom", pos=tiger_pos)
+
+
+
     elif agent_generator == 'two_clusters':
         x = y = map_size / 2
         n_deers = 81
@@ -65,6 +96,18 @@ def generate_map(env, map_size, handles, agent_generator):
         env.add_agents(handles[1], method="custom", pos=tiger_pos)
 
     elif agent_generator == 'static_cluster_spaced':
+        deer_pos = []
+        for i in range(3, 11, 2):
+            for j in range(3, 11, 2):
+                deer_pos.append((i, j))
+
+        env.add_agents(handles[0], method="custom", pos=deer_pos)
+
+        tiger_pos = [(4, 1), (6, 1)]
+        env.add_agents(handles[1], method="custom", pos=tiger_pos)
+
+
+    elif agent_generator == 'static_cluster_spaced_start_br_corner':
         deer_pos = []
         for i in range(3, 11, 2):
             for j in range(3, 11, 2):
@@ -119,8 +162,8 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
             acts[i] = models[i].infer_action(obs[i], ids[i], policy='e_greedy', eps=eps)
             env.set_action(handles[i], acts[i])
 
-            # if i == 1 and n_step <= 20:
-            #     print(obs[1][0][0].shape)
+            # if i == 1 and n_step > 0:
+            #     print(obs[1][1][0])
             #     for j in range(6):
             #         cv2.imwrite(f'obs_{n_step}_{j}.png', 255*obs[i][0][0][:,:,j])
 
@@ -128,9 +171,16 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
         n_step += 1
         done = env.step()
 
-        if n_step == 160:
+        if n_step == 100:
             ended = True
             done = True
+
+        if n_step == 1:
+            old_num_infected = 4
+        else:
+            old_num_infected = num_infected
+
+        num_infected = env.get_num_infected(handles[0])
 
 
         reward = 0
@@ -143,11 +193,13 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
 
             alives  = env.get_alive(handles[train_id])
 
+            rewards -= num_infected - old_num_infected
+
             assert(env.get_num_infected(handles[0]) + env.get_num_immunized(handles[0]) <=  env.get_num(handles[0]),
                 "Some vaccined agents are also infected !!!!!!!!!!!!!!")
 
             # if done:
-            #     rewards -= env.get_num_infected(handles[0]) / env.get_num(handles[train_id])
+            #     rewards += (env.get_num(handles[0]) - env.get_num_infected(handles[0]))*10 / env.get_num(handles[train_id])
 
             reward = sum(rewards)
             total_reward += reward
@@ -208,11 +260,12 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_every", type=int, default=500)
-    parser.add_argument("--n_round", type=int, default=30000)
+    parser.add_argument("--n_round", type=int, default=100001)
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--load_from", type=int)
     parser.add_argument("--agent_generator", default='random_spread', choices=['random_spread',
                                                                                'random_clusters',
+                                                                               'random_static_clusters',
                                                                                'two_clusters',
                                                                                'static_cluster_spaced'])
     parser.add_argument("--train", action="store_true")
@@ -227,6 +280,9 @@ if __name__ == "__main__":
     if args.agent_generator == 'static_cluster_spaced':
         args.map_size = 16
 
+    if args.agent_generator == 'random_static_clusters':
+        args.map_size = 55
+
     env = magent.GridWorld("agent_goal", map_size=args.map_size)
     print('Env initialized')
     env.set_render_dir("build/render")
@@ -239,7 +295,7 @@ if __name__ == "__main__":
         RandomActor(env, deer_handle, tiger_handle),
     ]
 
-    batch_size = 8
+    batch_size = 32
     unroll     = 8
 
     if args.alg == 'dqn':

@@ -205,7 +205,8 @@ void add_or_error(int ret, int x, int y, int &id_counter, Group &g, Agent *agent
 };
 
 void GridWorld::add_agents(GroupHandle group, int n, const char *method,
-                           const int *pos_x, const int *pos_y, const int *pos_dir) {
+                           const int *pos_x, const int *pos_y, const int *pos_dir, const int n_infected,
+                           const int *infected_ids) {
     int ret;
 
     if (group == -1) {  // group == -1 for wall
@@ -218,7 +219,7 @@ void GridWorld::add_agents(GroupHandle group, int n, const char *method,
                                  << "already occupied, ignored.";
                 }
             }
-        } else if (strequ(method, "custom")) {
+        } else if (strequ(method, "custom") or strequ(method, "custom_infection")) {
             for (int i = 0; i < n; i++) {
                 Position pos = Position{pos_x[i], pos_y[i]};
                 ret = map.add_wall(pos);
@@ -269,7 +270,7 @@ void GridWorld::add_agents(GroupHandle group, int n, const char *method,
                 ret = map.add_agent(agent, base_channel_id);
                 add_or_error(ret, pos.x, pos.y, id_counter, g, agent);
             }
-        } else if (strequ(method, "custom")) {
+        } else if (strequ(method, "custom") or strequ(method, "custom_infection")) {
             for (int i = 0; i < n; i++) {
                 Agent *agent = new Agent(agent_type, id_counter, group);
 
@@ -313,12 +314,24 @@ void GridWorld::add_agents(GroupHandle group, int n, const char *method,
         } else {
             LOG(FATAL) << "unsupported method in GridWorld::add_agents : " << method;
         }
+
         std::vector<Agent*> agents = groups[group].get_agents();
-        std::cout << "Begin initial infection of " << n*groups[group].get_prop_infected_init()\
-         << " agents..." << std::endl;
-        for (int i = 0; i < n*groups[group].get_prop_infected_init(); i++) {
-            std::cout << "Infecting agent " << i << "." << std::endl;
-            agents[i]->infect_initialization();
+        if (strequ(method, "custom_infection")) {
+            for (int i = 0; i < n_infected; i++) {
+                agents[infected_ids[i]]->infect_initialization();
+            }
+        } else {
+            std::cout << "Begin initial infection of " << n*groups[group].get_prop_infected_init()\
+             << " agents..." << std::endl;
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::cout << "###### Agents size:" << agents.size() << std::endl;
+            uniform_int_distribution = std::uniform_int_distribution<>(0, agents.size() - 1);
+            for (int i = 0; i < n*groups[group].get_prop_infected_init(); i++) {
+            int agent_index = uniform_int_distribution(gen);
+                std::cout << "Infecting agent " << agent_index << "." << std::endl;
+                agents[agent_index]->infect_initialization();
+            }
         }
     }
 }
@@ -432,9 +445,9 @@ void GridWorld::get_observation(GroupHandle group, float **linear_buffers) {
         feature_buffer.at(i, embedding_size + agent->get_action()) = 1;
         // last reward
         feature_buffer.at(i, embedding_size + n_action) = agent->get_last_reward();
-//        if (infection_mode) {
-//            feature_buffer.at(i, embedding_size + n_action + 1) = agent->get_vaccines_done();
-//        }
+        if (infection_mode) {
+            feature_buffer.at(i, embedding_size + n_action + 1) = agent->get_vaccines_done();
+        }
         if (minimap_mode) { // absolute coordination
             feature_buffer.at(i, embedding_size + n_action + 1) = (float) pos.x / width;
             feature_buffer.at(i, embedding_size + n_action + 2) = (float) pos.y / height;
@@ -1103,8 +1116,8 @@ int GridWorld::get_feature_size(GroupHandle group) {
         feature_space += 2;
     if (minimap_mode)  // x, y coordinate
         feature_space += 2;
-//    if (infection_mode) // number of vaccines already done
-//        feature_space +=1
+    if (infection_mode) // number of vaccines already done
+        feature_space +=1;
     return feature_space;
 }
 

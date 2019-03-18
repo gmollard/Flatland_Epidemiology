@@ -14,20 +14,20 @@ def get_config(map_size):
 
     deer = cfg.register_agent_type(
         "deer",
-        {'width': 1, 'length': 1, 'hp': 2, 'speed': 1,
+        {'width': 1, 'length': 1, 'hp': 2, 'speed': 0,
          'view_range': gw.CircleRange(1), 'attack_range': gw.CircleRange(0),
          'damage': 0, 'step_recover': 0.2,
          'food_supply': 0, 'kill_supply': 8, 'kill_reward': 0, 'vaccine_range': gw.CircleRange(0),
-         'infection_radius': 5, 'infection_probability': 0.005
+         'infection_radius': 2, 'infection_probability': 0.05
          })
 
     tiger = cfg.register_agent_type(
         "tiger",
         {'width': 1, 'length': 1, 'hp': 10, 'speed': 1,
-         'view_range': gw.CircleRange(30), 'attack_range': gw.CircleRange(0), 'vaccine_range': gw.CircleRange(1),
+         'view_range': gw.CircleRange(15), 'attack_range': gw.CircleRange(0), 'vaccine_range': gw.CircleRange(1),
          'damage': 1, 'step_recover': 0.0,
          'food_supply': 0, 'kill_supply': 0,
-         'step_reward': -0.0, 'attack_penalty': 0.0,
+         'step_reward': 0.0, 'attack_penalty': 0.0,
          # 'infection_radius': 2, 'infection_probability': 0.1
          })
 
@@ -43,7 +43,8 @@ def get_config(map_size):
     a = gw.AgentSymbol(tiger_group, index='any')
     b = gw.AgentSymbol(deer_group, index='any')
 
-    cfg.add_reward_rule(gw.Event(b, 'infected'), receiver=[b], value=[-1])
+    # cfg.add_reward_rule(gw.Event(b, 'infected'), receiver=[b], value=[-10])
+    # cfg.add_reward_rule(gw.Event(a, 'vaccine', b), receiver=[a], value=[1])
     # print('ok')
     # cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=[a,b], value=[10000, 10000])
 

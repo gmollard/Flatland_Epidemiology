@@ -11,7 +11,7 @@ from ..common import ReplayBuffer
 
 class DeepQNetwork(TFBaseModel):
     def __init__(self, env, handle, name,
-                 batch_size=64, learning_rate=1e-4, reward_decay=0.99,
+                 batch_size=64, learning_rate=1e-4, reward_decay=0.999999,
                  train_freq=1, target_update=2000, memory_size=2 ** 20, eval_obs=None,
                  use_dueling=True, use_double=True, use_conv=True,
                  custom_view_space=None, custom_feature_space=None,

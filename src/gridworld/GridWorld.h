@@ -65,7 +65,7 @@ public:
     void new_group(const char *agent_name, GroupHandle *group);
     void new_group_infected(const char* agent_name, GroupHandle *group, float prop_infected);
     void add_agents(GroupHandle group, int n, const char *method,
-                    const int *pos_x, const int *pos_y, const int *pos_dir);
+                    const int *pos_x, const int *pos_y, const int *pos_dir, int n_infected = 0, const int* infected_ids = 0);
 
     // reward description
     void define_agent_symbol(int no, int group, int index);
@@ -141,6 +141,7 @@ private:
 
     std::mt19937 random_generator;
     std::uniform_real_distribution<> uniform_distribution;
+    std::uniform_int_distribution<> uniform_int_distribution;
 };
 
 

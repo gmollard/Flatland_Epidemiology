@@ -185,7 +185,7 @@ class GridWorld(Environment):
         """
         if method == "random":
             _LIB.gridworld_add_agents(self.game, handle, int(kwargs["n"]), b"random", 0, 0, 0)
-        elif method == "custom":
+        elif 'custom' in method:
             n = len(kwargs["pos"])
             pos = np.array(kwargs["pos"], dtype=np.int32)
             if len(pos) <= 0:
@@ -196,8 +196,17 @@ class GridWorld(Environment):
                 xs, ys, dirs = pos[:, 0], pos[:, 1], np.zeros((n,), dtype=np.int32)
             # copy again, to make these arrays continuous in memory
             xs, ys, dirs = np.array(xs), np.array(ys), np.array(dirs)
-            _LIB.gridworld_add_agents(self.game, handle, n, b"custom", as_int32_c_array(xs),
-                                      as_int32_c_array(ys), as_int32_c_array(dirs))
+            if 'infection' in method:
+                infected = np.array(kwargs["infected"], dtype=np.int32)
+                infected = np.array(infected)
+                n_infected = len(infected)
+                _LIB.gridworld_add_agents(self.game, handle, n, b"custom_infection", as_int32_c_array(xs),
+                                          as_int32_c_array(ys), as_int32_c_array(dirs), n_infected,
+                                          as_int32_c_array(infected))
+            else:
+                _LIB.gridworld_add_agents(self.game, handle, n, b"custom", as_int32_c_array(xs),
+                                          as_int32_c_array(ys), as_int32_c_array(dirs))
+
         elif method == "fill":
             x, y = kwargs["pos"][0], kwargs["pos"][1]
             width, height = kwargs["size"][0], kwargs["size"][1]
