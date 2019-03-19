@@ -184,26 +184,27 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
 
 
         reward = 0
+
+        rewards = env.get_reward(handles[train_id])
+        # print(sum(env.get_reward(handles[train_id])) / env.get_num(handles[train_id]))
+        # rewards += sum(env.get_reward(handles[0])) / env.get_num(handles[train_id])
+            # print(env.get_reward(handles[1]))
+        # assert(n_step < 10)
+
+        alives  = env.get_alive(handles[train_id])
+
+        rewards -= num_infected - old_num_infected
+
+        assert(env.get_num_infected(handles[0]) + env.get_num_immunized(handles[0]) <=  env.get_num(handles[0]),
+            "Some vaccined agents are also infected !!!!!!!!!!!!!!")
+
+        # if done:
+        #     rewards += (env.get_num(handles[0]) - env.get_num_infected(handles[0]))*10 / env.get_num(handles[train_id])
+
+        reward = sum(rewards)
+        total_reward += reward
+
         if train_id != -1:
-            rewards = env.get_reward(handles[train_id])
-            # print(sum(env.get_reward(handles[train_id])) / env.get_num(handles[train_id]))
-            # rewards += sum(env.get_reward(handles[0])) / env.get_num(handles[train_id])
-                # print(env.get_reward(handles[1]))
-            # assert(n_step < 10)
-
-            alives  = env.get_alive(handles[train_id])
-
-            rewards -= num_infected - old_num_infected
-
-            assert(env.get_num_infected(handles[0]) + env.get_num_immunized(handles[0]) <=  env.get_num(handles[0]),
-                "Some vaccined agents are also infected !!!!!!!!!!!!!!")
-
-            # if done:
-            #     rewards += (env.get_num(handles[0]) - env.get_num_infected(handles[0]))*10 / env.get_num(handles[train_id])
-
-            reward = sum(rewards)
-            total_reward += reward
-
             sample_buffer.record_step(ids[train_id], obs[train_id], acts[train_id], rewards, alives)
 
 

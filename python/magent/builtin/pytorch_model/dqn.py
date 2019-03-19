@@ -176,9 +176,9 @@ class DQN(nn.Module):
         view, feature = raw_obs[0], raw_obs[1]
 
         if policy == 'e_greedy':
-            eps = eps
+            self.eps = eps
         elif policy == 'greedy':
-            eps = 0
+            self.eps = 0
 
         n = len(view)
         batch_size = min(n, self.infer_batch_size)
@@ -187,13 +187,50 @@ class DQN(nn.Module):
         ret = []
         for i in range(0, n, batch_size):
             beg, end = i, i + batch_size
-            ret.append(self.forward(view[beg:end], feature[beg:end]).argmax(1))
-                # self.sess.run(self.output_action, feed_dict={
-                # self.input_view: view[beg:end],
-                # self.input_feature: feature[beg:end],
-                # self.eps: eps}))
+            best_actions = self.forward(view[beg:end], feature[beg:end]).argmax(1)
+            should_explore = torch.FloatTensor(best_actions.size(0)).uniform_(0, 1) < self.eps
+            random_actions = torch.randint(0, self.num_actions, (best_actions.size(0),))
+            ret.append(torch.where(should_explore, random_actions, best_actions))
         ret = np.concatenate(ret)
         return ret
+
+
+    def _calc_target(self, next_view, next_feature, rewards, terminal):
+        """calculate target value"""
+        n = len(rewards)
+        t_qvalues = self.forward(next_view, next_feature)
+        next_value = np.max(t_qvalues, axis=1)
+
+        target = np.where(terminal, rewards, rewards + self.gamma * next_value)
+
+        return target
+
+    def _add_to_replay_buffer(self, sample_buffer):
+        """add samples in sample_buffer to replay buffer"""
+        n = 0
+        for episode in sample_buffer.episodes():
+            v, f, a, r = episode.views, episode.features, episode.actions, episode.rewards
+
+            m = len(r)
+
+            mask = np.ones((m,))
+            terminal = np.zeros((m,), dtype=np.bool)
+            if episode.terminal:
+                terminal[-1] = True
+            else:
+                mask[-1] = 0
+
+            self.replay_buf_view.put(v)
+            self.replay_buf_feature.put(f)
+            self.replay_buf_action.put(a)
+            self.replay_buf_reward.put(r)
+            self.replay_buf_terminal.put(terminal)
+            self.replay_buf_mask.put(mask)
+
+            n += m
+
+        self.replay_buf_len = min(self.memory_size, self.replay_buf_len + n)
+        return n
 
 
 
