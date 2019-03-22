@@ -11,7 +11,7 @@ from ..common import ReplayBuffer
 
 class DeepQNetwork(TFBaseModel):
     def __init__(self, env, handle, name,
-                 batch_size=64, learning_rate=1e-4, reward_decay=0.999999,
+                 batch_size=64, learning_rate=1e-4, reward_decay=0.99,
                  train_freq=1, target_update=2000, memory_size=2 ** 20, eval_obs=None,
                  use_dueling=True, use_double=True, use_conv=True,
                  custom_view_space=None, custom_feature_space=None,
@@ -59,7 +59,7 @@ class DeepQNetwork(TFBaseModel):
         self.handle = handle
         self.view_space = custom_view_space or env.get_view_space(handle)
         self.feature_space = custom_feature_space or env.get_feature_space(handle)
-        self.num_actions  = env.get_action_space(handle)[0]
+        self.num_actions = env.get_action_space(handle)[0]
         print(f'----------------------------------  {self.num_actions} -----------------------------')
 
 

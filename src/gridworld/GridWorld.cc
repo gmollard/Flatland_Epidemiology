@@ -37,6 +37,8 @@ GridWorld::GridWorld() {
     std::random_device rd;
     random_generator = std::mt19937(rd());
     uniform_distribution = std::uniform_real_distribution<>(0,1);
+
+    is_contained_epidemy = false;
 }
 
 GridWorld::~GridWorld() {
@@ -519,6 +521,10 @@ void GridWorld::set_infection_mode() {
     infection_mode = true;
 }
 
+bool GridWorld::epidemy_contained() const {
+    return is_contained_epidemy;
+}
+
 void GridWorld::step(int *done) {
     #pragma omp declare reduction (merge : std::vector<RenderAttackEvent> : omp_out.insert(omp_out.end(),\
      omp_in.begin(), omp_in.end()))
@@ -583,6 +589,8 @@ void GridWorld::step(int *done) {
 //        }
 //    }
 
+    is_contained_epidemy = true;
+
     if (infection_mode) {
         for (auto &group : groups) {
             if (group.get_prop_infected_init() != 0.0) {
@@ -595,7 +603,7 @@ void GridWorld::step(int *done) {
                 }
                 for (auto pos_infected : infected_positions) {
                     for (auto healthy_agent: group.get_agents()) {
-                        if (!healthy_agent->is_infected()) {
+                        if (!healthy_agent->is_infected() and !healthy_agent->is_immunized()) {
                             Position pos_healthy = healthy_agent->get_pos();
 
                             float radius = healthy_agent->get_type().infection_radius;
@@ -603,8 +611,9 @@ void GridWorld::step(int *done) {
                              pow(pos_healthy.y - pos_infected.y, 2));
 
                             float r = uniform_distribution(random_generator);
-                            if (dist <= radius and r < (healthy_agent->get_type().infection_probability) and\
-                             (!healthy_agent->is_immunized())) {
+                            if (dist <= radius)   {
+                                is_contained_epidemy = false;
+                                if (r < (healthy_agent->get_type().infection_probability))
                                     healthy_agent->infect();
                             }
                         }

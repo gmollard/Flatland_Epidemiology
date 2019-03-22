@@ -12,7 +12,7 @@ import magent
 from magent.builtin.rule_model import RandomActor
 import cv2
 
-
+reward_array = []
 def generate_map(env, map_size, handles, agent_generator):
     # env.add_walls(method="random", n=map_size*map_size*0.04)
     if agent_generator == 'random_clusters':
@@ -41,7 +41,6 @@ def generate_map(env, map_size, handles, agent_generator):
             env.add_agents(handles[0], method="custom", pos=deer_pos)
 
     elif agent_generator == 'random_static_clusters':
-        n_deers_per_cluster = 16
         x_coords = np.arange(10, map_size - 10, 20)
         y_coords = np.arange(10, map_size - 10, 20)
         deer_pos = []
@@ -51,8 +50,11 @@ def generate_map(env, map_size, handles, agent_generator):
                     for j in range(y + 1, y + 17, 2):
                         deer_pos.append((i, j))
 
-        infected_ids = [np.random.randint(0, 64), 64 + np.random.randint(0, 64),
-                        64 * 2 + np.random.randint(0, 64), 64 * 3 + np.random.randint(0, 64)]
+        # infected_ids = [np.random.randint(0, 64), 64 + np.random.randint(0, 64),
+        #                 64 * 2 + np.random.randint(0, 64), 64 * 3 + np.random.randint(0, 64)]
+        infected_ids = []
+        for i in range(len(x_coords)*len(y_coords)):
+            infected_ids.append(np.random.randint(0,64) + i*64)
 
         env.add_agents(handles[0], method="custom_infection", pos=deer_pos, infected=infected_ids)
 
@@ -127,6 +129,8 @@ def generate_map(env, map_size, handles, agent_generator):
 
 def play_a_round(env, map_size, handles, models, print_every, agent_generator,
                  train_id=1, step_batch_size=None, render=False, eps=None):
+
+
     env.reset()
     generate_map(env, map_size, handles, agent_generator)
 
@@ -171,9 +175,9 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
         n_step += 1
         done = env.step()
 
-        if n_step == 100:
-            ended = True
-            done = True
+        # if n_step == 100:
+        #     ended = True
+        #     done = True
 
         if n_step == 1:
             old_num_infected = 4
@@ -186,14 +190,19 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
         reward = 0
 
         rewards = env.get_reward(handles[train_id])
+        if env.epidemy_contained():
+            done = True
+            # rewards *= 0
+            rewards += 10*(env.get_num(handles[0]) -
+                        (env.get_num_immunized(handles[0]) + env.get_num_infected(handles[0])))
         # print(sum(env.get_reward(handles[train_id])) / env.get_num(handles[train_id]))
         # rewards += sum(env.get_reward(handles[0])) / env.get_num(handles[train_id])
             # print(env.get_reward(handles[1]))
         # assert(n_step < 10)
 
-        alives  = env.get_alive(handles[train_id])
+        alives = env.get_alive(handles[train_id])
 
-        rewards -= num_infected - old_num_infected
+        # rewards -= (num_infected - old_num_infected) / env.get_num(handles[train_id])
 
         assert(env.get_num_infected(handles[0]) + env.get_num_immunized(handles[0]) <=  env.get_num(handles[0]),
             "Some vaccined agents are also infected !!!!!!!!!!!!!!")
@@ -201,8 +210,14 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
         # if done:
         #     rewards += (env.get_num(handles[0]) - env.get_num_infected(handles[0]))*10 / env.get_num(handles[train_id])
 
+
+
         reward = sum(rewards)
         total_reward += reward
+        if done and train_id != -1:
+            reward_array.append(total_reward)
+            if (n_step % 2) == 0:
+                np.save('reward_array.npy', np.array(reward_array))
 
         if train_id != -1:
             sample_buffer.record_step(ids[train_id], obs[train_id], acts[train_id], rewards, alives)
@@ -273,7 +288,7 @@ if __name__ == "__main__":
     parser.add_argument("--greedy", action="store_true")
     parser.add_argument("--map_size", type=int, default=80)
     parser.add_argument("--name", type=str, default="goal")
-    parser.add_argument('--alg', default='dqn', choices=['dqn', 'drqn', 'a2c'])
+    parser.add_argument('--alg', default='dqn', choices=['dqn', 'pytorch_dqn', 'drqn', 'a2c'])
     args = parser.parse_args()
 
     # init the game
@@ -282,7 +297,7 @@ if __name__ == "__main__":
         args.map_size = 16
 
     if args.agent_generator == 'random_static_clusters':
-        args.map_size = 55
+        args.map_size = 40#55
 
     env = magent.GridWorld("agent_goal", map_size=args.map_size)
     print('Env initialized')
@@ -296,14 +311,21 @@ if __name__ == "__main__":
         RandomActor(env, deer_handle, tiger_handle),
     ]
 
-    batch_size = 32
+    batch_size = 128
     unroll     = 8
 
     if args.alg == 'dqn':
         from magent.builtin.tf_model import DeepQNetwork
         models.append(DeepQNetwork(env, tiger_handle, "goal",
                                    batch_size=batch_size,
-                                   memory_size=2 ** 20, learning_rate=1e-4))
+                                   memory_size=2 ** 20, target_update=2000, learning_rate=1e-4, reward_decay=0.99))
+        step_batch_size = None
+
+    elif args.alg == 'pytorch_dqn':
+        from magent.builtin.pytorch_model import DeepQNetwork
+        models.append(DeepQNetwork(env, tiger_handle, "goal",
+                                   batch_size=batch_size,
+                                   memory_size=2 ** 20, target_update=2000, learning_rate=1e-4, use_dueling=True))
         step_batch_size = None
 
 
@@ -312,6 +334,13 @@ if __name__ == "__main__":
         models.append(DeepRecurrentQNetwork(env, tiger_handle, "goal",
                                             batch_size=int(batch_size / unroll), unroll_step=unroll,
                                             memory_size=20000, learning_rate=4e-4))
+    elif args.alg == 'a2c':
+        from magent.builtin.mx_model import AdvantageActorCritic
+
+        step_batch_size = int(10 * args.map_size * args.map_size * 0.01)
+        models.append(AdvantageActorCritic(env, tiger_handle, "goal",
+                                           batch_size=step_batch_size,
+                                           learning_rate=1e-2))
 
         step_batch_size = None
     else:
@@ -339,7 +368,7 @@ if __name__ == "__main__":
     start = time.time()
     for k in range(start_from, start_from + args.n_round):
         tic = time.time()
-        eps = magent.utility.linear_decay(k, 10, 0.05) if not args.greedy else 0
+        eps = magent.utility.linear_decay(int(k/100), 10, 0.10) if not args.greedy else 0
         loss, reward, value = play_a_round(env, args.map_size, [deer_handle, tiger_handle], models,
                                            agent_generator=args.agent_generator,
                                            step_batch_size=step_batch_size, train_id=train_id,

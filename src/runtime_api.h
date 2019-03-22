@@ -44,6 +44,7 @@ int gridworld_new_group(EnvHandle game, const char *agent_type_name, GroupHandle
 int gridworld_new_group_infected(EnvHandle game, const char *agent_type_name, GroupHandle *group, float prop_infected);
 int gridworld_get_num_infected(EnvHandle game, GroupHandle group, int *buffer);
 int gridworld_get_num_immunized(EnvHandle game, GroupHandle group, int *buffer);
+int gridworld_epidemy_contained(EnvHandle game, int *buffer);
 int gridworld_add_agents(EnvHandle game, GroupHandle group, int n, const char *method,
                          const int *pos_x, const int *pos_y, const int *dir,
                          int n_infected = 0, const int *infected_ids = 0);

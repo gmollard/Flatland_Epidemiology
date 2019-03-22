@@ -124,6 +124,11 @@ int gridworld_get_num_immunized(EnvHandle game, GroupHandle group, int *buffer) 
     return 0;
 }
 
+int gridworld_epidemy_contained(EnvHandle game, int *buffer) {
+    *buffer = ((magent::gridworld::GridWorld *)game)->epidemy_contained();
+    return 0;
+}
+
 int gridworld_add_agents(EnvHandle game, GroupHandle group, int n, const char *method,
                          const int *pos_x, const int *pos_y, const int *dir, int n_infected,
                          const int *infected_ids) {
@@ -131,6 +136,8 @@ int gridworld_add_agents(EnvHandle game, GroupHandle group, int n, const char *m
     ((::magent::gridworld::GridWorld *)game)->add_agents(group, n, method, pos_x, pos_y, dir, n_infected, infected_ids);
     return 0;
 }
+
+
 
 // run step
 int gridworld_clear_dead(EnvHandle game) {

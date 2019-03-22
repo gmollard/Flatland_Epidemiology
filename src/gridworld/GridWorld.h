@@ -78,6 +78,7 @@ public:
 
     int get_num_infected(GroupHandle group);
     int get_num_immunized(GroupHandle group);
+    bool epidemy_contained() const;
 
 
 private:
@@ -142,6 +143,8 @@ private:
     std::mt19937 random_generator;
     std::uniform_real_distribution<> uniform_distribution;
     std::uniform_int_distribution<> uniform_int_distribution;
+
+    bool is_contained_epidemy;
 };
 
 
