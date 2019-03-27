@@ -11,17 +11,20 @@ For a simpler example, see also: multiagent_cartpole.py
 
 import argparse
 
+import gym
+
 import ray
 from ray.rllib.agents.dqn.dqn import DQNAgent
 from ray.rllib.agents.dqn.dqn_policy_graph import DQNPolicyGraph
-from ray.rllib.agents.ppo.ppo import PPOAgent
 from ray.rllib.agents.ppo.ppo_policy_graph import PPOPolicyGraph
-from ray.rllib.tests.test_multi_agent_env import MultiCartpole
+from ray.rllib.agents.ppo.ppo import PPOAgent
 from ray.tune.logger import pretty_print
 from ray.tune.registry import register_env
+from ray.rllib.models import ModelCatalog, Model
+from examples.RLLibCustomModel import RLLibCustomModel
 
-from magent import GridWorldRLLibEnv
-import magent
+
+from magent.GridWorldRLLibEnv import GridWorldRLLibEnv
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--num-iters", type=int, default=20)
@@ -29,10 +32,11 @@ parser.add_argument("--num-iters", type=int, default=20)
 
 if __name__ == "__main__":
     ray.init()
+    ModelCatalog.register_custom_model("my_model", RLLibCustomModel)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_every", type=int, default=500)
-    parser.add_argument("--n_round", type=int, default=100001)
+    parser.add_argument("--n_round", type=int, default=1000)
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--load_from", type=int)
     parser.add_argument("--agent_generator", default='random_spread', choices=['random_spread',
@@ -55,63 +59,56 @@ if __name__ == "__main__":
     if args.agent_generator == 'random_static_clusters':
         args.map_size = 40  # 55
 
-    env = magent.GridWorld("agent_goal", map_size=args.map_size)
-    print('Env initialized')
-    env.set_render_dir("build/render")
 
-    # two groups of animal
-    deer_handle, tiger_handle = env.get_handles()
-    handles = [deer_handle, tiger_handle]
-    obs_space = env.get_view_space(tiger_handle)
-    act_space = env.get_action_space(tiger_handle)
+    obs_space = gym.spaces.Tuple((gym.spaces.Space((31,31,6)), gym.spaces.Space((21,))))
+    act_space = gym.spaces.Discrete(9)
 
 
-    def env_creator(env_config):
-        return GridWorldRLLibEnv(None, args.map_size, handles, args.agent_generator)
-
-    # Simple environment with 4 independent cartpole entities
-    register_env("gridworld", lambda _: env_creator(None))
-
-    # You can also have multiple policy graphs per trainer, but here we just
-    # show one each for PPO and DQN.
     policy_graphs = {
-        # "ppo_policy": (PPOPolicyGraph, obs_space, act_space, {}),
-        "dqn_policy": (DQNPolicyGraph, obs_space, act_space, {}),
+        "dqn_policy_agent_0": (PPOPolicyGraph, obs_space, act_space, {'gamma': 0.99}),
+        "dqn_policy_agent_1": (PPOPolicyGraph, obs_space, act_space, {'gamma': 0.95}),
+        "dqn_policy_agent_2": (PPOPolicyGraph, obs_space, act_space, {'gamma': 0.90}),
+        "dqn_policy_agent_3": (PPOPolicyGraph, obs_space, act_space, {'gamma': 0.85})
     }
 
-    # def policy_mapping_fn(agent_id):
-    #     if agent_id % 2 == 0:
-    #         return "ppo_policy"
-    #     else:
-    #         return "dqn_policy"
+    def policy_mapping_fn(agent_id):
+        return f"dqn_policy_{agent_id}"
 
-    dqn_trainer = DQNAgent(
+    env_config = {"map_size": args.map_size,
+            "agent_generator": args.agent_generator,
+            "render": args.render
+    }
+
+    register_env("gridworld", lambda _: GridWorldRLLibEnv(env_config))
+
+    dqn_trainer = PPOAgent(
         env="gridworld",
         config={
             "multiagent": {
                 "policy_graphs": policy_graphs,
-                "policy_mapping_fn": 'dqn_policy',
+                "policy_mapping_fn": policy_mapping_fn,
                 "policies_to_train": ["dqn_policy"],
             },
-            "gamma": 0.95,
-            "n_step": 3,
+            "model": {
+                "custom_model": "my_model",
+            },
+            "num_workers":16,
+            "num_gpus": 2,
+            "num_envs_per_worker": 2
+            # "gamma": 0.95,
+            # "n_step": 3,
         })
 
-    # You should see both the printed X and Y approach 200 as this trains:
-    # info:
-    #   policy_reward_mean:
-    #     dqn_policy: X
-    #     ppo_policy: Y
-    for i in range(args.num_iters):
+
+    for i in range(args.n_round):
         print("== Iteration", i, "==")
 
         # improve the DQN policy
         print("-- DQN --")
         print(pretty_print(dqn_trainer.train()))
 
-        # improve the PPO policy
-        # print("-- PPO --")
-        # print(pretty_print(ppo_trainer.train()))
+        if i % 20 == 0:
+            checkpoint = dqn_trainer.save()
+            print("checkpoint saved at", checkpoint)
 
-        # swap weights to synchronize
-        dqn_trainer.set_weights(dqn_trainer.get_weights(["ppo_policy"]))
+

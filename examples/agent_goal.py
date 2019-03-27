@@ -11,6 +11,7 @@ import numpy as np
 import magent
 from magent.builtin.rule_model import RandomActor
 import cv2
+import os
 
 reward_array = []
 def generate_map(env, map_size, handles, agent_generator):
@@ -68,7 +69,6 @@ def generate_map(env, map_size, handles, agent_generator):
                 # dir = np.random.uniform(-1, 1, 2)
                 # dir = dir / np.linalg.norm(dir)
                 # tiger_pos.append((x + 6 + dir[0] * 6, y + 6 + dir[1] * 6))
-
         env.add_agents(handles[1], method="custom", pos=tiger_pos)
 
 
@@ -77,6 +77,8 @@ def generate_map(env, map_size, handles, agent_generator):
         x = y = map_size / 2
         n_deers = 81
         deer_pos = []
+
+
         for i in range(int(-np.sqrt(n_deers) / 2) - 1, int(np.sqrt(n_deers) / 2)):
             for j in range(int(-np.sqrt(n_deers) / 2) - 1, int(np.sqrt(n_deers) / 2)):
                 deer_pos.append((x + i, y + j))
@@ -130,7 +132,7 @@ def generate_map(env, map_size, handles, agent_generator):
 def play_a_round(env, map_size, handles, models, print_every, agent_generator,
                  train_id=1, step_batch_size=None, render=False, eps=None):
 
-
+    global reward_array
     env.reset()
     generate_map(env, map_size, handles, agent_generator)
 
@@ -193,8 +195,9 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
         if env.epidemy_contained():
             done = True
             # rewards *= 0
-            rewards += 10*(env.get_num(handles[0]) -
-                        (env.get_num_immunized(handles[0]) + env.get_num_infected(handles[0])))
+            # rewards += 10*(env.get_num(handles[0]) -
+            #             (env.get_num_immunized(handles[0]) + env.get_num_infected(handles[0])))
+        rewards -= env.get_num_infected(handles[0])
         # print(sum(env.get_reward(handles[train_id])) / env.get_num(handles[train_id]))
         # rewards += sum(env.get_reward(handles[0])) / env.get_num(handles[train_id])
             # print(env.get_reward(handles[1]))
@@ -215,6 +218,9 @@ def play_a_round(env, map_size, handles, models, print_every, agent_generator,
         reward = sum(rewards)
         total_reward += reward
         if done and train_id != -1:
+            if not reward_array:
+                if os.path.exists('reward_array.npy'):
+                    reward_array = list(np.load('reward_array.npy'))
             reward_array.append(total_reward)
             if (n_step % 2) == 0:
                 np.save('reward_array.npy', np.array(reward_array))
@@ -368,7 +374,7 @@ if __name__ == "__main__":
     start = time.time()
     for k in range(start_from, start_from + args.n_round):
         tic = time.time()
-        eps = magent.utility.linear_decay(int(k/100), 10, 0.10) if not args.greedy else 0
+        eps = magent.utility.linear_decay(int(k/100), 20, 0.05) if not args.greedy else 0
         loss, reward, value = play_a_round(env, args.map_size, [deer_handle, tiger_handle], models,
                                            agent_generator=args.agent_generator,
                                            step_batch_size=step_batch_size, train_id=train_id,
