@@ -11,6 +11,7 @@ import magent
 import numpy as np
 
 import gym
+import cv2
 
 
 @PublicAPI
@@ -31,6 +32,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         # self.handles = config["handles"]
         self.agent_generator = config["agent_generator"]
         self.action_space = gym.spaces.Discrete(9)
+        self.observation_space = gym.spaces.Tuple((gym.spaces.Space((31,31,6)), gym.spaces.Space((21,))))
+
 
 
     @PublicAPI
@@ -47,6 +50,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         for i, agent_name in enumerate(self.agents):
             obs[agent_name] = [observations[0][i], observations[1][i]]
 
+        self.total_reward = 0
+        self.num_infected = 1
         return obs
 
     @PublicAPI
@@ -65,6 +70,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         """
         self.env.set_action(self.handles[1], np.array([action_dict[agent_name]\
                                                        for agent_name in self.agents]).astype(np.int32))
+        # # print(action_dict)
+        # self.env.set_action(self.handles[1], np.array([action_dict]).astype(np.int32))
         done = self.env.step()
         rew = self.env.get_reward(self.handles[1])
         observations = self.env.get_observation(self.handles[1])
@@ -72,11 +79,25 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         rewards = {}
         dones = {}
         dones['__all__'] = self.env.epidemy_contained() or done
-        rew -= self.env.get_num_infected(self.handles[0])
+        if self.env.get_num_infected(self.handles[0])[0] > self.num_infected:
+            # rew -= self.env.get_num_infected(self.handles[0])[0] - self.num_infected # self.env.get_num_infected(self.handles[0])
+            self.num_infected = self.env.get_num_infected(self.handles[0])[0]
+
+        self.total_reward += sum(rew)
         if dones['__all__']:
-            # rew += 10*(self.env.get_num(self.handles[0]) -
-            #             (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0])))
-            print(rew)
+            rew += 10*(self.env.get_num(self.handles[0]) -
+                        (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0])))
+
+            if (self.env.get_num(self.handles[0]) -
+                        (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0]))) > 0:
+                print('DONE !!!!!')
+                # for i in range(6):
+                #     for j in range(4):
+                #         cv2.imwrite(f'obs_{j}_{i}.png', observations[0][0][:,:,i]*255.0)
+
+            print(self.num_infected)
+            print(self.total_reward + len(rew)*10*(self.env.get_num(self.handles[0]) -
+                        (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0]))))
 
         infos = {}
         for i, agent_name in enumerate(self.agents):

@@ -37,21 +37,16 @@ class RLLibCustomModel(Model):
         Dropout = tf.layers.dropout
         Dense = tf.layers.dense
 
-        conv1 = Relu(BatchNormalization(self.conv2d(input_dict['obs'][0], 64, 'valid'), axis=3,
-                                        training=input_dict['is_training']))
+        conv1 = Relu(self.conv2d(input_dict['obs'][0], 64, 'valid'))
 
-        conv2 = Relu(BatchNormalization(self.conv2d(conv1, 64, 'valid'), axis=3, training=input_dict['is_training']))
+        # conv2 = Relu(self.conv2d(conv1, 64, 'valid'))
 
-        conv3 = Relu(BatchNormalization(self.conv2d(conv2, 64, 'valid'), axis=3, training=input_dict['is_training']))
+        # conv3 = Relu(self.conv2d(conv2, 64, 'valid'))
 
-        conv4 = Relu(BatchNormalization(self.conv2d(conv3, 64, 'valid'), axis=3, training=input_dict['is_training']))
-        conv4_flat = tf.reshape(conv4, [-1, 64 * (31-2*4)**2])
+        conv4_flat = tf.reshape(conv1, [-1, 64 * (31-2*1)**2])
         conv4_feature = tf.concat((conv4_flat, input_dict['obs'][1]), axis=1)
-        s_fc1 = Dropout(
-            Relu(BatchNormalization(Dense(conv4_feature, 1024, use_bias=False), axis=1, training=input_dict['is_training'])),
-                rate=0.10)
-        layerN_minus_1 = Dropout(Relu(BatchNormalization(Dense(s_fc1, 512, use_bias=False), axis=1, training=input_dict['is_training'])),
-                        rate=0.1)
+        s_fc1 = Relu(Dense(conv4_feature, 1024, use_bias=False))
+        layerN_minus_1 = Relu(Dense(s_fc1, 512, use_bias=False))
         layerN = Dense(layerN_minus_1, num_outputs)
         return layerN, layerN_minus_1
 

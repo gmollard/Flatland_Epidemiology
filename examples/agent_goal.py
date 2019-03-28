@@ -71,6 +71,64 @@ def generate_map(env, map_size, handles, agent_generator):
                 # tiger_pos.append((x + 6 + dir[0] * 6, y + 6 + dir[1] * 6))
         env.add_agents(handles[1], method="custom", pos=tiger_pos)
 
+    elif agent_generator == 'random_static_clusters_single_agent':
+        x_coords = np.arange(10, map_size - 10, 20)
+        y_coords = np.arange(10, map_size - 10, 20)
+        deer_pos = []
+        for x in x_coords:
+            for y in y_coords:
+                for i in range(x + 1, x + 17, 2):
+                    for j in range(y + 1, y + 17, 2):
+                        deer_pos.append((i, j))
+
+        # infected_ids = [np.random.randint(0, 64), 64 + np.random.randint(0, 64),
+        #                 64 * 2 + np.random.randint(0, 64), 64 * 3 + np.random.randint(0, 64)]
+        infected_ids = []
+        for i in range(len(x_coords) * len(y_coords)):
+            infected_ids.append(np.random.randint(0, 64) + i * 64)
+
+        env.add_agents(handles[0], method="custom_infection", pos=deer_pos, infected=infected_ids)
+
+        tiger_pos = []
+        x = x_coords[0]
+        y = y_coords[0]
+
+        tiger_pos.append((x + 8, y + 17))
+        tiger_pos.append((x + 8, y - 2))
+        tiger_pos.append((x - 2, y + 8))
+        tiger_pos.append((x + 17, y + 8))
+
+        env.add_agents(handles[1], method="custom", pos=[tiger_pos[np.random.randint(0, 4)]])
+
+    elif agent_generator == 'random_static_clusters_two_agents':
+        x_coords = np.arange(10, map_size - 10, 20)
+        y_coords = np.arange(10, map_size - 10, 20)
+        deer_pos = []
+        for x in x_coords:
+            for y in y_coords:
+                for i in range(x + 1, x + 17, 2):
+                    for j in range(y + 1, y + 17, 2):
+                        deer_pos.append((i, j))
+
+        # infected_ids = [np.random.randint(0, 64), 64 + np.random.randint(0, 64),
+        #                 64 * 2 + np.random.randint(0, 64), 64 * 3 + np.random.randint(0, 64)]
+        infected_ids = []
+        for i in range(len(x_coords) * len(y_coords)):
+            infected_ids.append(np.random.randint(0, 64) + i * 64)
+
+        env.add_agents(handles[0], method="custom_infection", pos=deer_pos, infected=infected_ids)
+
+        tiger_pos = []
+        x = x_coords[0]
+        y = y_coords[0]
+
+        # tiger_pos.append((x + 8, y + 17))
+        tiger_pos.append((x + 8, y - 2))
+        # tiger_pos.append((x - 2, y + 8))
+        tiger_pos.append((x + 17, y + 8))
+
+        env.add_agents(handles[1], method="custom", pos=tiger_pos)
+
 
 
     elif agent_generator == 'two_clusters':
