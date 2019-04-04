@@ -27,12 +27,18 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.env = magent.GridWorld("agent_goal", map_size=self.map_size)
         self.handles = self.env.get_handles()
         self.render = config['render']
-        self.env.set_render_dir("build/rllib_render")
+        self.env.set_render_dir("build/render")
 
         # self.handles = config["handles"]
         self.agent_generator = config["agent_generator"]
+        self.num_static_blocks = 1
+        if "num_static_blocks" in config.keys():
+            self.num_static_blocks = config["num_static_blocks"]
         self.action_space = gym.spaces.Discrete(9)
-        self.observation_space = gym.spaces.Tuple((gym.spaces.Space((31,31,6)), gym.spaces.Space((21,))))
+        self.action_space = None
+        # self.observation_space = gym.spaces.Tuple((gym.spaces.Space((31,31,6)), gym.spaces.Space((21,))))
+        self.observation_space = gym.spaces.Space((42,42,6))
+        self.observation_space = None
 
 
 
@@ -48,7 +54,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.agents = [f'agent_{i}' for i in range(self.env.get_num(self.handles[1]))]
         obs = {}
         for i, agent_name in enumerate(self.agents):
-            obs[agent_name] = [observations[0][i], observations[1][i]]
+            obs[agent_name] = [observations[0][i], observations[1][i]]#, observations[1][i]]
 
         self.total_reward = 0
         self.num_infected = 1
@@ -74,6 +80,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         # self.env.set_action(self.handles[1], np.array([action_dict]).astype(np.int32))
         done = self.env.step()
         rew = self.env.get_reward(self.handles[1])
+        # rew *= len(rew)
         observations = self.env.get_observation(self.handles[1])
         obs = {}
         rewards = {}
@@ -86,7 +93,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.total_reward += sum(rew)
         if dones['__all__']:
             rew += 10*(self.env.get_num(self.handles[0]) -
-                        (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0])))
+                        (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0]))) / len(rew)
 
             if (self.env.get_num(self.handles[0]) -
                         (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0]))) > 0:
@@ -96,13 +103,13 @@ class GridWorldRLLibEnv(MultiAgentEnv):
                 #         cv2.imwrite(f'obs_{j}_{i}.png', observations[0][0][:,:,i]*255.0)
 
             print(self.num_infected)
-            print(self.total_reward + len(rew)*10*(self.env.get_num(self.handles[0]) -
+            print(self.total_reward + 10*(self.env.get_num(self.handles[0]) -
                         (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0]))))
 
         infos = {}
         for i, agent_name in enumerate(self.agents):
             obs[agent_name] = [observations[0][i], observations[1][i]]
-            rewards[agent_name] = rew[i]
+            rewards[agent_name] = rew[i] / self.num_static_blocks
             dones[agent_name] = False
             infos[agent_name] = None
         # clear dead agents

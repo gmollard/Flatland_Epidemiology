@@ -62,8 +62,8 @@ def generate_map(env, map_size, handles, agent_generator):
         tiger_pos = []
         for x in x_coords:
             for y in y_coords:
-               tiger_pos.append((x + 8, y+17))
-               tiger_pos.append((x + 8, y - 2))
+               # tiger_pos.append((x + 8, y+17))
+               # tiger_pos.append((x + 8, y - 2))
                tiger_pos.append((x - 2, y+8))
                tiger_pos.append((x +17, y+8))
                 # dir = np.random.uniform(-1, 1, 2)
