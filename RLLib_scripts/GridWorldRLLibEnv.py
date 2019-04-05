@@ -27,7 +27,10 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.env = magent.GridWorld("agent_goal", map_size=self.map_size)
         self.handles = self.env.get_handles()
         self.render = config['render']
-        self.env.set_render_dir("build/render")
+        self.n_agents = None
+        if 'n_agents' in config.keys():
+            self.n_agents = config['n_agents']
+        # self.env.set_render_dir("build/render")
 
         # self.handles = config["handles"]
         self.agent_generator = config["agent_generator"]
@@ -49,7 +52,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
             obs (dict): New observations for each ready agent.
         """
         self.env.reset()
-        generate_map(self.env, self.map_size, self.handles, self.agent_generator)
+        generate_map(self.env, self.map_size, self.handles, self.agent_generator, self.n_agents)
         observations = self.env.get_observation(self.handles[1])
         self.agents = [f'agent_{i}' for i in range(self.env.get_num(self.handles[1]))]
         obs = {}

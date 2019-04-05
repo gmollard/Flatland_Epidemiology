@@ -14,7 +14,7 @@ import cv2
 import os
 
 reward_array = []
-def generate_map(env, map_size, handles, agent_generator):
+def generate_map(env, map_size, handles, agent_generator, n_agents=None):
     # env.add_walls(method="random", n=map_size*map_size*0.04)
     if agent_generator == 'random_clusters':
         n_agent_per_cluster = 81
@@ -70,6 +70,38 @@ def generate_map(env, map_size, handles, agent_generator):
                 # dir = dir / np.linalg.norm(dir)
                 # tiger_pos.append((x + 6 + dir[0] * 6, y + 6 + dir[1] * 6))
         env.add_agents(handles[1], method="custom", pos=tiger_pos)
+
+    elif agent_generator == 'random_static_clusters_1_to_4_agents':
+        x_coords = np.arange(10, map_size - 10, 20)
+        y_coords = np.arange(10, map_size - 10, 20)
+        deer_pos = []
+        for x in x_coords:
+            for y in y_coords:
+                for i in range(x + 1, x + 17, 2):
+                    for j in range(y + 1, y + 17, 2):
+                        deer_pos.append((i, j))
+
+        # infected_ids = [np.random.randint(0, 64), 64 + np.random.randint(0, 64),
+        #                 64 * 2 + np.random.randint(0, 64), 64 * 3 + np.random.randint(0, 64)]
+        infected_ids = []
+        for i in range(len(x_coords)*len(y_coords)):
+            infected_ids.append(np.random.randint(0,64) + i*64)
+
+        env.add_agents(handles[0], method="custom_infection", pos=deer_pos, infected=infected_ids)
+
+        tiger_pos = []
+        for x in x_coords:
+            for y in y_coords:
+               tiger_pos.append((x + 8, y+17))
+               tiger_pos.append((x + 8, y - 2))
+               tiger_pos.append((x - 2, y+8))
+               tiger_pos.append((x +17, y+8))
+                # dir = np.random.uniform(-1, 1, 2)
+                # dir = dir / np.linalg.norm(dir)
+                # tiger_pos.append((x + 6 + dir[0] * 6, y + 6 + dir[1] * 6))
+        print('##################################### NAGENTs:', n_agents)
+        print(tiger_pos[:n_agents])
+        env.add_agents(handles[1], method="custom", pos=tiger_pos[:n_agents])
 
     elif agent_generator == 'random_static_clusters_single_agent':
         x_coords = np.arange(10, map_size - 10, 20)

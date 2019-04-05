@@ -14,6 +14,8 @@ from ray.tune.registry import register_env
 from ray.rllib.models import ModelCatalog
 from RLLib_scripts.RLLibCustomModel import RLLibCustomModel, LightModel
 
+import ray
+
 from RLLib_scripts.GridWorldRLLibEnv import GridWorldRLLibEnv
 
 
@@ -26,7 +28,7 @@ parser.add_argument("--num-iters", type=int, default=20)
 
 
 if __name__ == "__main__":
-
+    ray.init()
     # Here we register the custom models
     ModelCatalog.register_custom_model("my_model", RLLibCustomModel)
     ModelCatalog.register_custom_model("light_model", LightModel)
@@ -110,9 +112,8 @@ if __name__ == "__main__":
 
     config['multiagent'] = {"policy_graphs": policy_graphs,
                             "policy_mapping_fn": policy_mapping_fn,
-                            "policies_to_train": ["ppo_policy_agent_0",
-                                                  "ppo_policy_agent_1"]}  # , "ppo_policy_agent_1", "ppo_policy_agent_2",
-    # "ppo_policy_agent_3"]}
+                            "policies_to_train": ["ppo_policy_agent_0"]}  # , "ppo_policy_agent_1", "ppo_policy_agent_2",
+    # "ppo_policy_agent_3"]
 
     ppo_trainer = PPOAgent(env="gridworld", config=config)
 
