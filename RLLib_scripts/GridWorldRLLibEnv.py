@@ -54,6 +54,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.env.reset()
         generate_map(self.env, self.map_size, self.handles, self.agent_generator, self.n_agents)
         observations = self.env.get_observation(self.handles[1])
+        assert(self.n_agents == self.env.get_num(self.handles[1]))
         self.agents = [f'agent_{i}' for i in range(self.env.get_num(self.handles[1]))]
         obs = {}
         for i, agent_name in enumerate(self.agents):

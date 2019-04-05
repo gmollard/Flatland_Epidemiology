@@ -37,18 +37,19 @@ def train_func(config, reporter):
     policy_graphs = {}
     # Dict with the different policies to train
     if config['single_policy']:
-        policy_graphs["ppo_policy_agent_0"] = (PPOPolicyGraph, obs_space, act_space, {})
+        policy_graphs[f"ppo_policy_agent_0_{config['n_agents']}_{config['single_policy']}"] = (PPOPolicyGraph, obs_space, act_space, {})
 
     else:
         for i in range(config['n_agents']):
-            policy_graphs[f"ppo_policy_agent_{i}"] = (PPOPolicyGraph, obs_space, act_space, {})
+            policy_graphs[f"ppo_policy_agent_{i}_{config['n_agents']}_{config['single_policy']}"] = (PPOPolicyGraph, obs_space, act_space, {})
 
 
     def policy_mapping_fn(agent_id):
+        # id = int(agent_id.split('_')[-1])
         if config['single_policy']:
-            return "ppo_policy_agent_0"
+            return f"ppo_policy_agent_0_{config['n_agents']}_{config['single_policy']}"
         else:
-            return f"ppo_policy_{agent_id}"
+            return f"ppo_policy_{agent_id}_{config['n_agents']}_{config['single_policy']}"
 
     # Environment configuration
     env_config = {"map_size": 40,
@@ -58,19 +59,19 @@ def train_func(config, reporter):
                   "n_agents": config["n_agents"]
                   }
 
-    register_env("gridworld", lambda _: GridWorldRLLibEnv(env_config))
+    register_env(f"gridworld_{config['n_agents']}", lambda _: GridWorldRLLibEnv(env_config))
 
     # PPO Config specification
     agent_config = ppo.DEFAULT_CONFIG.copy()
     # Here we use the default fcnet with modified hidden layers size
     agent_config['model'] = {"fcnet_hiddens": config['hidden_sizes']}
 
-    # agent_config["num_workers"] = 0
-    # agent_config["num_cpus_per_worker"] = 16
-    # agent_config["num_gpus"] = 1
-    # agent_config["num_gpus_per_worker"] = 1
-    # agent_config["num_cpus_for_driver"] = 2
-    # agent_config["num_envs_per_worker"] = 15
+    agent_config["num_workers"] = 0
+    agent_config["num_cpus_per_worker"] = 15
+    agent_config["num_gpus"] = 0.5
+    agent_config["num_gpus_per_worker"] = 0.5
+    agent_config["num_cpus_for_driver"] = 1
+    agent_config["num_envs_per_worker"] = 15
 
     agent_config['multiagent'] = {"policy_graphs": policy_graphs,
                             "policy_mapping_fn": policy_mapping_fn,
@@ -88,9 +89,7 @@ def train_func(config, reporter):
 
     logger = logger_creator
 
-
-
-    ppo_trainer = PPOAgent(env="gridworld", config=agent_config, logger_creator=logger)
+    ppo_trainer = PPOAgent(env=f"gridworld_{config['n_agents']}", config=agent_config, logger_creator=logger)
 
     for i in range(100000 + 2):
         print("== Iteration", i, "==")
@@ -110,12 +109,12 @@ all_trials = tune.run(
     name="n_agents_policy_grid_search",
     stop={"num_iterations_trained": 1402},
     config={"single_policy": tune.grid_search([True, False]),
-            "n_agents": tune.grid_search([2, 3, 4]),
+            "n_agents": tune.grid_search([4, 3, 2, 1]),
             "hidden_sizes": [32, 32],
             "save_every": 200},
     resources_per_trial={
-        "cpu": 7,
-        "gpu": 0.25,
+        "cpu": 15,
+        "gpu": 0.5
     },
     local_dir="/mount/SDC/ray_results"
 )

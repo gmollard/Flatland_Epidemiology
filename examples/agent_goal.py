@@ -99,8 +99,6 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None):
                 # dir = np.random.uniform(-1, 1, 2)
                 # dir = dir / np.linalg.norm(dir)
                 # tiger_pos.append((x + 6 + dir[0] * 6, y + 6 + dir[1] * 6))
-        print('##################################### NAGENTs:', n_agents)
-        print(tiger_pos[:n_agents])
         env.add_agents(handles[1], method="custom", pos=tiger_pos[:n_agents])
 
     elif agent_generator == 'random_static_clusters_single_agent':
