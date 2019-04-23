@@ -85,6 +85,8 @@ AgentType::AgentType(int n, std::string name, const char **keys, float *values, 
         AGENT_TYPE_SET_FLOAT(infection_radius);
         AGENT_TYPE_SET_FLOAT(infection_probability)
 
+        AGENT_TYPE_SET_FLOAT(vaccine_reward)
+
         if (!is_set) {
             LOG(FATAL) << "invalid agent config in AgentType::AgentType : " << keys[i];
         }

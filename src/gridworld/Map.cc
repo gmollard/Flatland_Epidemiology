@@ -200,13 +200,16 @@ void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, 
                         buffer.at(view_y, view_x, 1) = 1;
                     } else if (p->get_type().name == "tiger") {
                         buffer.at(view_y, view_x, 2) = 1;
+//                        buffer.at(view_y, view_x, 2) = 1;
                     } else {
                         if (!p->is_infected() and !p->is_immunized()){
                             buffer.at(view_y, view_x, 3) = 1;
+//                            buffer.at(view_y, view_x, 3) = p->get_dist_infected();
                         } else if (p->is_infected()) {
                             buffer.at(view_y, view_x, 4) = 1;
                         } else {
                             buffer.at(view_y, view_x, 5) = 1;
+//                            buffer.at(view_y, view_x, 6) = p->get_dist_infected();
                         }
                     }
                 }

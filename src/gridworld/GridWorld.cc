@@ -321,6 +321,7 @@ void GridWorld::add_agents(GroupHandle group, int n, const char *method,
         if (strequ(method, "custom_infection")) {
             for (int i = 0; i < n_infected; i++) {
                 agents[infected_ids[i]]->infect_initialization();
+                infected_agents_list.push_back(agents[infected_ids[i]]);
             }
         } else {
             std::cout << "Begin initial infection of " << n*groups[group].get_prop_infected_init()\
@@ -336,6 +337,8 @@ void GridWorld::add_agents(GroupHandle group, int n, const char *method,
             }
         }
     }
+
+//    compute_dist_infected_map();
 }
 
 void GridWorld::get_observation(GroupHandle group, float **linear_buffers) {
@@ -525,6 +528,27 @@ bool GridWorld::epidemy_contained() const {
     return is_contained_epidemy;
 }
 
+void GridWorld::compute_dist_infected_map(){
+    for (auto &group : groups) {
+        if (get_num_infected(0) != 0.0) {
+            for (auto healthy_agent: group.get_agents()) {
+                Position healthy_pos = healthy_agent->get_pos();
+                if (!healthy_agent->is_infected()){
+                    float min_dist = map.h * map.h + map.w * map.w;
+                    for (auto infected_agent: infected_agents_list) {
+                        Position infected_pos = infected_agent->get_pos();
+                        float dist = sqrt(pow(healthy_pos.x - infected_pos.x, 2) +
+                             pow(healthy_pos.y - infected_pos.y, 2));
+                        if (dist < min_dist)
+                            min_dist = dist;
+                    }
+                    healthy_agent->set_dist_infected(min_dist);
+                }
+            }
+        }
+    }
+}
+
 void GridWorld::step(int *done) {
     #pragma omp declare reduction (merge : std::vector<RenderAttackEvent> : omp_out.insert(omp_out.end(),\
      omp_in.begin(), omp_in.end()))
@@ -593,7 +617,7 @@ void GridWorld::step(int *done) {
 
     if (infection_mode) {
         for (auto &group : groups) {
-            if (group.get_prop_infected_init() != 0.0) {
+            if (get_num_infected(0) != 0.0) {
                 std::vector<Position> infected_positions;
                 for (auto infected_agent: group.get_agents()) {
                     if (infected_agent->is_infected()) {
@@ -613,8 +637,10 @@ void GridWorld::step(int *done) {
                             float r = uniform_distribution(random_generator);
                             if (dist <= radius)   {
                                 is_contained_epidemy = false;
-                                if (r < (healthy_agent->get_type().infection_probability))
+                                if (r < (healthy_agent->get_type().infection_probability)) {
                                     healthy_agent->infect();
+                                    infected_agents_list.push_back(healthy_agent);
+                                }
                             }
                         }
                     }
@@ -622,6 +648,10 @@ void GridWorld::step(int *done) {
             }
         }
     }
+
+//    compute_dist_infected_map();
+
+
 
     // shuffle attacks
     for (int i = 0; i < attack_size; i++) {
@@ -899,7 +929,7 @@ void GridWorld::get_info(GroupHandle group, const char *name, void *void_buffer)
     // for more information from the engine, add items here
 
     std::vector<Agent*> &agents = groups[group].get_agents();
-    int   *int_buffer   = (int *)void_buffer;
+        int   *int_buffer   = (int *)void_buffer;
     float *float_buffer = (float *)void_buffer;
     bool  *bool_buffer  = (bool *)void_buffer;
 

@@ -404,8 +404,8 @@ void GridWorld::calc_rule(std::vector<AgentSymbol *> &input_symbols,
                 } else {
                     Agent* agent = (Agent *)sym->entity;
                     if (rule.on->op == OP_VACCINE) {
-                        if (agent->get_vaccines_done() < 1000)
-                            agent->add_reward(1.0);
+                        if (agent->get_vaccines_done() < 10000)
+                            agent->add_reward(agent->get_vaccine_reward());
                         else
                             agent->add_reward(-exp((agent->get_vaccines_done())*1.0 - 4.0));
                         agent->set_last_op(OP_NULL);

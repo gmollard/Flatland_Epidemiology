@@ -145,6 +145,10 @@ private:
     std::uniform_int_distribution<> uniform_int_distribution;
 
     bool is_contained_epidemy;
+
+    std::vector<Agent*> infected_agents_list;
+
+    void compute_dist_infected_map();
 };
 
 
@@ -278,6 +282,11 @@ public:
 
     int get_vaccines_done() const {return vaccines_done;}
 
+    float get_vaccine_reward() const {return type.vaccine_reward;}
+
+    float get_dist_infected() const {return dist_infected;}
+    void set_dist_infected(float dist) {dist_infected = dist;}
+
 private:
     int id;
     bool dead;
@@ -306,6 +315,8 @@ private:
     bool infected;
     bool immunized;
     int vaccines_done;
+
+    float dist_infected;
 };
 
 

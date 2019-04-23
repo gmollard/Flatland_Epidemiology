@@ -75,10 +75,12 @@ public:
     void render();
     void get_wall(std::vector<Position> &walls) const;
 
+    int w, h;
+
 private:
     MapSlot* slots;
     int *channel_ids;  // channel_id is supposed to be a member of MapSlot, extract it out from MapSlot for faster access of memory
-    int w, h;
+
     const int wall_channel_id, food_channel_id;
     bool food_mode;
 

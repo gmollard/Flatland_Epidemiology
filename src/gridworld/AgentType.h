@@ -56,6 +56,8 @@ public:
 
     // Probability of infecting an agent of the same group nearby
     float infection_probability;
+
+    float vaccine_reward;
 };
 
 

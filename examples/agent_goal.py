@@ -101,6 +101,28 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None):
                 # tiger_pos.append((x + 6 + dir[0] * 6, y + 6 + dir[1] * 6))
         env.add_agents(handles[1], method="custom", pos=tiger_pos[:n_agents])
 
+    elif agent_generator == 'scale_map_size_4_agents':
+
+        deer_pos = []
+
+        for i in range(10 + 1, map_size - 10, 2):
+            for j in range(10 + 1, map_size - 10, 2):
+                deer_pos.append((i, j))
+
+        # infected_ids = [np.random.randint(0, 64), 64 + np.random.randint(0, 64),
+        #                 64 * 2 + np.random.randint(0, 64), 64 * 3 + np.random.randint(0, 64)]
+        infected_ids = [np.random.randint(0, len(deer_pos))]
+
+        env.add_agents(handles[0], method="custom_infection", pos=deer_pos, infected=infected_ids)
+
+        tiger_pos = []
+
+        tiger_pos.append((map_size / 2, map_size - 10))
+        tiger_pos.append((map_size / 2, 8))
+        tiger_pos.append((8, map_size / 2))
+        tiger_pos.append((map_size - 10, map_size / 2))
+        env.add_agents(handles[1], method="custom", pos=tiger_pos)
+
     elif agent_generator == 'random_static_clusters_single_agent':
         x_coords = np.arange(10, map_size - 10, 20)
         y_coords = np.arange(10, map_size - 10, 20)

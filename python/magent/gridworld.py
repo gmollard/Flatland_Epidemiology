@@ -244,7 +244,7 @@ class GridWorld(Environment):
         self.obs_bufs.append({})
         self.obs_bufs.append({})
 
-    def get_observation(self, handle):
+    def get_observation(self, handle, view_mode):
         """ get observation of a whole group
 
         Parameters
@@ -257,6 +257,13 @@ class GridWorld(Environment):
             views is a numpy array, whose shape is n * view_width * view_height * n_channel
             features is a numpy array, whose shape is n * feature_size
             for agent i, (views[i], features[i]) is its observation at this step
+
+            view channels:  0 -> Walls
+                            1 -> self
+                            2 -> Allies
+                            3 -> Healthy agents
+                            4 -> Infected agents
+                            5 -> Immunized agents
         """
         view_space = self.view_space[handle.value]
         feature_space = self.feature_space[handle.value]
@@ -270,6 +277,42 @@ class GridWorld(Environment):
         bufs[0] = as_float_c_array(view_buf)
         bufs[1] = as_float_c_array(feature_buf)
         _LIB.env_get_observation(self.game, handle, bufs)
+
+        # infected_pos = [[]] * n
+        # agents_pos = [[]] * n
+        #
+        # for k in range(n):
+        #     infected_pos[k] = np.argwhere(view_buf[k][:, :, 4])
+        #
+        # healthy_distance_to_infection = np.zeros((n, len(view_buf[0]), len(view_buf[0][0]), 1))
+        # for i in range(len(view_buf[0])):
+        #     for j in range(len(view_buf[0][0])):
+        #         for k in range(n):
+        #             if view_buf[k][i][j][3] or (view_mode == "exposed_agents_immunized" and view_buf[k][i][j][5]):
+        #                 closest_infected_dist = float('inf')
+        #                 for pos in infected_pos[k]:
+        #                     dist = (pos[0] - i)**2 + (pos[1] - j)**2
+        #                     if dist < closest_infected_dist:
+        #                         closest_infected_dist = dist
+        #                 healthy_distance_to_infection[k, i, j] = np.sqrt(closest_infected_dist)
+
+        # if view_mode == "dist_map":
+        #     view_buf = np.concatenate((view_buf, healthy_distance_to_infection), axis=3)
+
+
+
+
+        # if view_mode == "exposed_agents_immunized":
+        #     for k in range(n):
+        #         view_buf[k, :, :, 6] = (view_buf[k][:, :, 6] > 0) * (view_buf[k][:, :, 6] <= 2)
+        # elif view_mode == "exposed_agents":
+        #     for k in range(n):
+        #         view_buf[k, :, :, 6] = (view_buf[k][:, :, 3] > 0) * (view_buf[k][:, :, 6] <= 2)
+        # elif view_mode == "dist_map":
+        #     for k in range(n):
+        #         view_buf[k, :, :, 6] = (((view_buf[k][:, :, 3] > 0) * (view_buf[k][:, :, 6])) / 2).astype(int)
+                
+            # view_buf = np.concatenate((view_buf, exposed), axis=3)
 
         return view_buf, feature_buf
 
@@ -440,7 +483,8 @@ class GridWorld(Environment):
         return attack_base.value, buf
 
     def get_global_minimap(self, height, width):
-        """ compress global map into a minimap of given size
+        """ compress global map into a minimap o
+        f given size
         Parameters
         ----------
         height: int

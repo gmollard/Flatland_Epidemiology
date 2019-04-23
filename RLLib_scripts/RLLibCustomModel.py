@@ -80,11 +80,9 @@ class LightModel(Model):
              'is_training': <tf.Tensor shape=(), dtype=bool>,
              'obs': (observation, features)
         """
-
-        self.ssbu = "Top Tier"
         # print(input_dict)
         # Convolutional Layer #1
-
+        self.sess = tf.get_default_session()
         Relu = tf.nn.relu
         BatchNormalization = tf.layers.batch_normalization
         Dropout = tf.layers.dropout
@@ -106,4 +104,29 @@ class LightModel(Model):
     def conv2d(self, x, out_channels, padding):
         return tf.layers.conv2d(x, out_channels, kernel_size=[3, 3], padding=padding, use_bias=True)
                                 # weights_initializer=normc_initializer(1.0))
+
+    def custom_loss(self, policy_loss, loss_inputs):
+        """Override to customize the loss function used to optimize this model.
+
+        This can be used to incorporate self-supervised losses (by defining
+        a loss over existing input and output tensors of this model), and
+        supervised losses (by defining losses over a variable-sharing copy of
+        this model's layers).
+
+        You can find an runnable example in examples/custom_loss.py.
+
+        Arguments:
+            policy_loss (Tensor): scalar policy loss from the policy graph.
+            loss_inputs (dict): map of input placeholders for rollout data.
+
+        Returns:
+            Scalar tensor for the customized loss for this model.
+        """
+        print("Los Inputs Shape: ", loss_inputs['obs'].shape)
+        print(policy_loss)
+        # print_action_prob = tf.print(loss_inputs['actions'], summarize=200)
+        # with tf.control_dependencies([print_action_prob]):
+        #     tf.multiply(print_action_prob, print_action_prob)
+        # self.sess.run()
+        return tf.reduce_mean(policy_loss)
 

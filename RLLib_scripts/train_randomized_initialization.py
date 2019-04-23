@@ -1,72 +1,18 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-import argparse
-
-import gym
-
-import ray.rllib.agents.ppo as ppo
-from ray.rllib.agents.ppo.ppo import PPOAgent
-from ray.rllib.agents.dqn.dqn import DQNAgent
-from ray.rllib.agents.dqn import dqn
-from ray.rllib.agents.ppo.ppo_policy_graph import PPOPolicyGraph
-from ray.tune.logger import pretty_print
-from ray.tune.registry import register_env
-from ray.rllib.models import ModelCatalog
-from RLLib_scripts.RLLibCustomModel import RLLibCustomModel, LightModel
-
-import tempfile
-import ray
-from ray.tune.logger import UnifiedLogger
-
-from RLLib_scripts.GridWorldRLLibEnv import GridWorldRLLibEnv
-from RLLib_scripts.DQNCustomPolicyGraph import DQNPolicyGraph
-
-
-'''
-Training script for the GridWorldRLLibEnv multiagent Environment.
-'''
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--num-iters", type=int, default=20)
 
 
 if __name__ == "__main__":
     ray.init()
-    # Here we register the custom models
-    ModelCatalog.register_custom_model("my_model", RLLibCustomModel)
-    ModelCatalog.register_custom_model("light_model", LightModel)
-
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_every", type=int, default=100)
     parser.add_argument("--n_round", type=int, default=50000)
     parser.add_argument("--render", action="store_true")
-    parser.add_argument("--agent_generator", default='random_spread', choices=['random_spread',
-                                                                               'random_clusters',
-                                                                               'random_static_clusters',
-                                                                               'random_static_clusters_single_agent',
-                                                                               'random_static_clusters_two_agents',
-                                                                               'two_clusters',
-                                                                               'random_static_clusters_1_to_4_agents',
-                                                                               'static_cluster_spaced',
-                                                                               'scale_map_size_4_agents'])
-    parser.add_argument("--map_size", type=int, default=100)
-    parser.add_argument("--name", type=str, default="goal")
     args = parser.parse_args()
 
     # init the game
     print('Init Env')
-    if args.agent_generator == 'static_cluster_spaced':
-        args.map_size = 16
-
-    if args.agent_generator == 'random_static_clusters_single_agent'\
-            or args.agent_generator == 'random_static_clusters_two_agents' or args.agent_generator == 'random_static_clusters_1_to_4_agents':
-        args.map_size = 40
-
-    if args.agent_generator == 'scale_map_size_4_agents':
-        args.map_size = 60
+    map_size = 100
 
     # Specifying observation space and actions space dimensions.
     # TODO: take this as parameter and send it to the corresponding magent/builtin/config file.
@@ -76,16 +22,16 @@ if __name__ == "__main__":
 
     # Dict with the different policies to train
     policy_graphs = {
-        "ppo_policy_agent_0_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
-        "ppo_policy_agent_1_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
-        "ppo_policy_agent_2_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
-        "ppo_policy_agent_3_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
+        "ppo_policy_agent_0": (PPOPolicyGraph, obs_space, act_space, {}),
+        # "ppo_policy_agent_1_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
+        # "ppo_policy_agent_2_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
+        # "ppo_policy_agent_3_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
         # "ppo_policy_agent_3": (PPOPolicyGraph, obs_space, act_space, {}),
     }
 
     # Function mapping agent id to the corrresponding policy
     def policy_mapping_fn(agent_id):
-        return f"ppo_policy_{agent_id}_vaccine_reward_01_vf_clip_param_10"
+        return f"ppo_policy_agent_0"
         # if agent_id == "agent_0":
         #     return "ppo_policy_agent_0"
         # return "ppo_policy_agent_1"
@@ -153,5 +99,3 @@ if __name__ == "__main__":
         # if i % args.save_every == 0:
         #     checkpoint = ppo_trainer.save()
         #     print("checkpoint saved at", checkpoint)
-
-
