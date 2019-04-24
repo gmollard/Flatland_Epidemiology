@@ -233,14 +233,17 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
         env.add_agents(handles[1], method="custom", pos=tiger_pos)
 
     elif agent_generator == "randomized_init":
+        import time
+        t0 = time.time()
         n_health_agents = np.random.randint(n_agents[0], n_agents[1])
-        n_pop_agents = map_size ** 2 / 3
+        n_pop_agents = int(map_size ** 2 / 10)
 
         available_pos = []
         occupied_pos = []
 
         def add_pos(init_pos=None):
             if init_pos is not None:
+                print(init_pos)
                 pos = init_pos
             else:
                 while True:
@@ -249,22 +252,29 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
                         break
 
             occupied_pos.append(pos)
-            available_pos.append((pos[0]-2, pos[1]))
-            available_pos.append((pos[0]+2, pos[1]))
-            available_pos.append((pos[0], pos[1]-2))
-            available_pos.append((pos[0], pos[1]+2))
+            if pos[0]-2 > 5:
+                available_pos.append((pos[0]-2, pos[1]))
+            if pos[0] + 2 < map_size-5:
+                available_pos.append((pos[0]+2, pos[1]))
+            if pos[1] - 2 > 5:
+                available_pos.append((pos[0], pos[1]-2))
+            if pos[1] + 2 < map_size-5:
+                available_pos.append((pos[0], pos[1]+2))
 
         # We initialize the first agent in a sub square of size map_size / 2
         # to ensure the population won't lie too much next to the environment border.
-        add_pos(np.random.randint(map_size / 2, 3*map_size / 2, 2))
+        add_pos(tuple(np.random.randint(int(map_size / 4), int(3*map_size / 4), 2)))
         for i in range(n_pop_agents - 1):
             add_pos()
 
-        env.add_agents(handles[0], method="custom_infection", pos=occupied_pos,
-                       infected=np.random.randint(0, n_pop_agents))
-
+        infected_id = np.random.randint(0, n_pop_agents)
+        print(infected_id)
+        env.add_agents(handles[0], method="custom_infection", pos=occupied_pos, infected=[infected_id])
+                       # infected=[np.random.randint(0, n_pop_agents)])
+        print('population_initialized')
         env.add_agents(handles[1], method="random", n=n_health_agents)
 
+        print('Init time:', time.time()-t0)
 
 
 
