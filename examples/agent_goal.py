@@ -14,7 +14,7 @@ import cv2
 import os
 
 reward_array = []
-def generate_map(env, map_size, handles, agent_generator, n_agents=None):
+def generate_map(env, map_size, handles, agent_generator, n_agents=None, infection_range=None):
     # env.add_walls(method="random", n=map_size*map_size*0.04)
     if agent_generator == 'random_clusters':
         n_agent_per_cluster = 81
@@ -231,6 +231,45 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None):
 
         tiger_pos = [(4, 1), (6, 1)]
         env.add_agents(handles[1], method="custom", pos=tiger_pos)
+
+    elif agent_generator == "randomized_init":
+        n_health_agents = np.random.randint(n_agents[0], n_agents[1])
+        n_pop_agents = map_size ** 2 / 3
+
+        available_pos = []
+        occupied_pos = []
+
+        def add_pos(init_pos=None):
+            if init_pos is not None:
+                pos = init_pos
+            else:
+                while True:
+                    pos = available_pos[np.random.randint(0, len(available_pos))]
+                    if pos not in occupied_pos:
+                        break
+
+            occupied_pos.append(pos)
+            available_pos.append((pos[0]-2, pos[1]))
+            available_pos.append((pos[0]+2, pos[1]))
+            available_pos.append((pos[0], pos[1]-2))
+            available_pos.append((pos[0], pos[1]+2))
+
+        # We initialize the first agent in a sub square of size map_size / 2
+        # to ensure the population won't lie too much next to the environment border.
+        add_pos(np.random.randint(map_size / 2, 3*map_size / 2, 2))
+        for i in range(n_pop_agents - 1):
+            add_pos()
+
+        env.add_agents(handles[0], method="custom_infection", pos=occupied_pos,
+                       infected=np.random.randint(0, n_pop_agents))
+
+        env.add_agents(handles[1], method="random", n=n_health_agents)
+
+
+
+
+
+
 
 
 

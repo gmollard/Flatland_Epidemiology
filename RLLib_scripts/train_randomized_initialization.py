@@ -1,3 +1,21 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import argparse
+
+import gym
+
+import ray.rllib.agents.ppo as ppo
+from ray.rllib.agents.ppo.ppo import PPOAgent
+from ray.rllib.agents.ppo.ppo_policy_graph import PPOPolicyGraph
+from ray.tune.logger import pretty_print
+from ray.tune.registry import register_env
+
+
+import ray
+
+from RLLib_scripts.GridWorldRLLibEnv import GridWorldRLLibEnv
 
 
 
@@ -22,7 +40,7 @@ if __name__ == "__main__":
 
     # Dict with the different policies to train
     policy_graphs = {
-        "ppo_policy_agent_0": (PPOPolicyGraph, obs_space, act_space, {}),
+        "ppo_policy": (PPOPolicyGraph, obs_space, act_space, {}),
         # "ppo_policy_agent_1_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
         # "ppo_policy_agent_2_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
         # "ppo_policy_agent_3_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
@@ -31,18 +49,16 @@ if __name__ == "__main__":
 
     # Function mapping agent id to the corrresponding policy
     def policy_mapping_fn(agent_id):
-        return f"ppo_policy_agent_0"
-        # if agent_id == "agent_0":
-        #     return "ppo_policy_agent_0"
-        # return "ppo_policy_agent_1"
+        return f"ppo_policy"
+
 
     # Environment configuration
-    env_config = {"map_size": args.map_size,
-            "agent_generator": args.agent_generator,
-            "render": args.render,
-            "num_static_blocks": 1,
-            "n_agents": 4,
-            "vaccine_reward": 0.1
+    env_config = {"map_size": map_size,
+                  "agent_generator": "randomized_init",
+                  "render": args.render,
+                  "num_static_blocks": 1,
+                  "n_agents": [map_size**2 /4, map_size**2 /3],
+                  "vaccine_reward": 0.1
     }
 
     register_env("gridworld", lambda _: GridWorldRLLibEnv(env_config))
@@ -50,27 +66,26 @@ if __name__ == "__main__":
 
     # PPO Config specification
     config = ppo.DEFAULT_CONFIG.copy()
-    # config['model'] = {"use_lstm": True}
-    # config['model'] = {"custom_model": "light_model"}
     config['model'] = {"fcnet_hiddens": [64, 64]}  # Here we u0e the default fcnet with modified hidden layers size
 
     config["num_workers"] = 0
-    config["num_cpus_per_worker"] = 15
-    config["num_gpus"] = 0.5
-    config["num_gpus_per_worker"] = 0.5
-    config["num_cpus_for_driver"] = 8
-    config["num_envs_per_worker"] = 1
+    config["num_cpus_per_worker"] = 45
+    config["num_gpus"] = 2
+    config["num_gpus_per_worker"] = 2
+    config["num_cpus_for_driver"] = 3
+    config["num_envs_per_worker"] = 20
 
     # Config for rendering (Only one environment in parallel or there is a bug with de video.txt file.
-    # config["num_workers"] = 0
-    # config["num_cpus_per_worker"] = 15
-    # config["num_gpus"] = 1
-    # config["num_cpus_for_driver"] = 1
-    # config["num_envs_per_worker"] = 1
+    if args.render:
+        config["num_workers"] = 0
+        config["num_cpus_per_worker"] = 15
+        config["num_gpus"] = 1
+        config["num_cpus_for_driver"] = 1
+        config["num_envs_per_worker"] = 1
 
     config['multiagent'] = {"policy_graphs": policy_graphs,
                             "policy_mapping_fn": policy_mapping_fn,
-                            "policies_to_train": list(policy_graphs.keys())}  # , "ppo_policy_agent_1", "ppo_policy_agent_2",
+                            "policies_to_train": list(policy_graphs.keys())}
     # "ppo_policy_agent_3"]
 
     # def logger_creator(conf):
@@ -84,11 +99,10 @@ if __name__ == "__main__":
 
     # logger = logger_creator
 
-    ppo_trainer = PPOAgent(env="gridworld", config=config)#, logger_creator=logger)
+    ppo_trainer = PPOAgent(env="gridworld", config=config)
 
     # To reload policies from a checkpoint
-    ppo_trainer.restore('/mount/SDC/ray_results_ppo_rewaard_benchamark/ppo_vaccine_reward_01_vf_clip_param_1049dx2247/checkpoint_2801/checkpoint-2801')
-
+    # ppo_trainer.restore('/mount/SDC/ray_results_ppo_rewaard_benchamark/ppo_vaccine_reward_01_vf_clip_param_1049dx2247/checkpoint_2801/checkpoint-2801')
 
     for i in range(args.n_round + 2):
         print("== Iteration", i, "==")
