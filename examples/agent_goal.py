@@ -236,7 +236,7 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
         import time
         t0 = time.time()
         n_health_agents = np.random.randint(n_agents[0], n_agents[1])
-        n_pop_agents = int(map_size ** 2 / 10)
+        n_pop_agents = int(map_size ** 2 / 8)
 
         available_pos = []
         occupied_pos = []
@@ -252,13 +252,13 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
                         break
 
             occupied_pos.append(pos)
-            if pos[0]-2 > 5:
+            if pos[0]-2 > 1:
                 available_pos.append((pos[0]-2, pos[1]))
-            if pos[0] + 2 < map_size-5:
+            if pos[0] + 2 < map_size-1:
                 available_pos.append((pos[0]+2, pos[1]))
-            if pos[1] - 2 > 5:
+            if pos[1] - 2 > 1:
                 available_pos.append((pos[0], pos[1]-2))
-            if pos[1] + 2 < map_size-5:
+            if pos[1] + 2 < map_size-1:
                 available_pos.append((pos[0], pos[1]+2))
 
         # We initialize the first agent in a sub square of size map_size / 2

@@ -37,11 +37,11 @@ def train_func(config, reporter):
     policy_graphs = {}
     # Dict with the different policies to train
     if config['single_policy']:
-        policy_graphs[f"ppo_policy_agent_0_{config['n_agents']}_{config['single_policy']}"] = (PPOPolicyGraph, obs_space, act_space, {})
+        policy_graphs[f"ppo_policy_agent_0_{config['n_agents']}1_{config['single_policy']}"] = (PPOPolicyGraph, obs_space, act_space, {})
 
     else:
         for i in range(config['n_agents']):
-            policy_graphs[f"ppo_policy_agent_{i}_{config['hidden_sizes'][0]}_{config['hidden_sizes'][1]}"] = (PPOPolicyGraph, obs_space, act_space, {})
+            policy_graphs[f"ppo_policy_agent_{i}_1_False"] = (PPOPolicyGraph, obs_space, act_space, {})
 
 
     def policy_mapping_fn(agent_id):
@@ -49,23 +49,18 @@ def train_func(config, reporter):
         if config['single_policy']:
             return f"ppo_policy_agent_0_{config['n_agents']}_{config['single_policy']}"
         else:
-            return f"ppo_policy_{agent_id}_{config['hidden_sizes'][0]}_{config['hidden_sizes'][1]}"
-
-    if config['checkpoint_path'] == 'grid_sizes_60uiqrcefy':
-        config['map_size'] = 60
-    elif '70' in config['checkpoint_path']:
-        config['map_size'] = 70
-    else:
-        config['map_size'] = 80
+            return f"ppo_policy_{agent_id}_1_False"
 
 
     # Environment configuration
     env_config = {"map_size": config['map_size'],
-                  "agent_generator": 'scale_map_size_4_agents',
+                  "agent_generator": 'random_static_clusters_1_to_4_agents',
                   "render": False,
                   "num_static_blocks": 1,
+                  "vaccine_reward": 0.1,
                   "n_agents": config["n_agents"]
                   }
+        # if agent_id == "agent_
 
     register_env(f"gridworld_{config['n_agents']}", lambda _: GridWorldRLLibEnv(env_config))
 
@@ -75,10 +70,10 @@ def train_func(config, reporter):
     agent_config['model'] = {"fcnet_hiddens": config['hidden_sizes']}
 
     agent_config["num_workers"] = 0
-    agent_config["num_cpus_per_worker"] = 15
-    agent_config["num_gpus"] = 0.5
-    agent_config["num_gpus_per_worker"] = 0.5
-    agent_config["num_cpus_for_driver"] = 1
+    agent_config["num_cpus_per_worker"] = 40
+    agent_config["num_gpus"] = 2
+    agent_config["num_gpus_per_worker"] = 2
+    agent_config["num_cpus_for_driver"] = 5
     agent_config["num_envs_per_worker"] = 15
 
     agent_config['multiagent'] = {"policy_graphs": policy_graphs,
@@ -89,16 +84,16 @@ def train_func(config, reporter):
         """Creates a Unified logger with a default logdir prefix
         containing the agent name and the env id
         """
-        logdir = f"grid_sizes_{config['map_size']}"
+        logdir = f"single_agent"
         logdir = tempfile.mkdtemp(
-            prefix=logdir, dir="/mount/SDC/ray_results_grid_size")
+            prefix=logdir, dir="/mount/SDC/ray_results_single_agent")
         return UnifiedLogger(conf, logdir, None)
 
     logger = logger_creator
 
     ppo_trainer = PPOAgent(env=f"gridworld_{config['n_agents']}", config=agent_config, logger_creator=logger)
 
-    ppo_trainer.restore(f'/mount/SDC/ray_results_grid_size/{config["checkpoint_path"]}/checkpoint_801/checkpoint-801')
+    # ppo_trainer.restore(f'/mount/SDC/ray_results_single_agent/single_agentj2rdenlx/checkpoint_2802/checkpoint-2802')
 
     for i in range(100000 + 2):
         print("== Iteration", i, "==")
@@ -116,15 +111,16 @@ def train_func(config, reporter):
 all_trials = tune.run(
     train_func,
     name="n_agents_policy_grid_search",
-    stop={"num_iterations_trained": 3000},
+    stop={"num_iterations_trained": 50000},
     config={"single_policy": False,
+            "map_size": 40,
             "n_agents": 4,
             "hidden_sizes": [32, 32],
-            "save_every": 200,
-            "checkpoint_path": tune.grid_search(['grid_sizes_60uiqrcefy', 'grid_sizes_70yogg45vy', 'grid_sizes_80aezp1jc3'])},
+            "save_every": 200},
+            # "checkpoint_path": tune.grid_search(['grid_sizes_60uiqrcefy', 'grid_sizes_70yogg45vy', 'grid_sizes_80aezp1jc3'])},
     resources_per_trial={
-        "cpu": 15,
-        "gpu": 0.5
+        "cpu": 45,
+        "gpu": 2
     },
-    local_dir="/mount/SDC/ray_results_hidden_sizes"
+    local_dir="/mount/SDC/ray_results_single_agent"
 )

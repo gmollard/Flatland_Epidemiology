@@ -76,16 +76,16 @@ if __name__ == "__main__":
 
     # Dict with the different policies to train
     policy_graphs = {
-        "ppo_policy_agent_0_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
-        "ppo_policy_agent_1_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
-        "ppo_policy_agent_2_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
-        "ppo_policy_agent_3_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
+        "ppo_policy_agent_0_1_False": (PPOPolicyGraph, obs_space, act_space, {}),
+        # "ppo_policy_agent_1_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
+        # "ppo_policy_agent_2_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
+        # "ppo_policy_agent_3_vaccine_reward_01_vf_clip_param_10": (PPOPolicyGraph, obs_space, act_space, {}),
         # "ppo_policy_agent_3": (PPOPolicyGraph, obs_space, act_space, {}),
     }
 
     # Function mapping agent id to the corrresponding policy
     def policy_mapping_fn(agent_id):
-        return f"ppo_policy_{agent_id}_vaccine_reward_01_vf_clip_param_10"
+        return f"ppo_policy_{agent_id}_1_False"
         # if agent_id == "agent_0":
         #     return "ppo_policy_agent_0"
         # return "ppo_policy_agent_1"
@@ -106,13 +106,13 @@ if __name__ == "__main__":
     config = ppo.DEFAULT_CONFIG.copy()
     # config['model'] = {"use_lstm": True}
     # config['model'] = {"custom_model": "light_model"}
-    config['model'] = {"fcnet_hiddens": [64, 64]}  # Here we u0e the default fcnet with modified hidden layers size
+    config['model'] = {"fcnet_hiddens": [32, 32]}  # Here we u0e the default fcnet with modified hidden layers size
 
     config["num_workers"] = 0
-    config["num_cpus_per_worker"] = 15
-    config["num_gpus"] = 0.5
-    config["num_gpus_per_worker"] = 0.5
-    config["num_cpus_for_driver"] = 8
+    config["num_cpus_per_worker"] = 40
+    config["num_gpus"] = 2
+    config["num_gpus_per_worker"] = 2
+    config["num_cpus_for_driver"] = 5
     config["num_envs_per_worker"] = 1
 
     # Config for rendering (Only one environment in parallel or there is a bug with de video.txt file.
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     ppo_trainer = PPOAgent(env="gridworld", config=config)#, logger_creator=logger)
 
     # To reload policies from a checkpoint
-    ppo_trainer.restore('/mount/SDC/ray_results_ppo_rewaard_benchamark/ppo_vaccine_reward_01_vf_clip_param_1049dx2247/checkpoint_2801/checkpoint-2801')
+    # ppo_trainer.restore('/mount/SDC/ray_results_single_agent/single_agentj2rdenlx/checkpoint_2802/checkpoint-2802')
 
 
     for i in range(args.n_round + 2):

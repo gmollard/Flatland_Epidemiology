@@ -20,7 +20,7 @@ from RLLib_scripts.GridWorldRLLibEnv import GridWorldRLLibEnv
 
 
 if __name__ == "__main__":
-    ray.init(object_store_memory=200000000000)
+    ray.init(object_store_memory=100000000000)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_every", type=int, default=100)
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     # init the game
     print('Init Env')
-    map_size = 100
+    map_size = 40
 
     # Specifying observation space and actions space dimensions.
     # TODO: take this as parameter and send it to the corresponding magent/builtin/config file.
@@ -57,7 +57,7 @@ if __name__ == "__main__":
                   "agent_generator": "randomized_init",
                   "render": args.render,
                   "num_static_blocks": 1,
-                  "n_agents": [map_size**2 /100, map_size**2 / 20],
+                  "n_agents": [map_size**2 /100, map_size**2 / 50],
                   "vaccine_reward": 0.1
     }
 
@@ -68,21 +68,24 @@ if __name__ == "__main__":
     config = ppo.DEFAULT_CONFIG.copy()
     config['model'] = {"fcnet_hiddens": [64, 64]}  # Here we u0e the default fcnet with modified hidden layers size
 
-    config["num_workers"] = 8
-    config["num_cpus_per_worker"] = 6
-    config["num_gpus"] = 2
-    config["num_gpus_per_worker"] = 0.3
-    config["num_cpus_for_driver"] = 3
-    config["num_envs_per_worker"] = 2
-    config['sample_batch_size'] = 4
+    # config["num_workers"] = 8
+    # config["num_cpus_per_worker"] = 5
+    # config["num_gpus"] = 2
+    # config["num_gpus_per_worker"] = 0.2
+    # config["num_cpus_for_driver"] = 5
+    # config["num_envs_per_worker"] = 1
+    # config['sample_batch_size'] = 200
+    # config['train_batch_size'] = 16
+    # config['sgd_minibatch_size'] = 4
 
     # Config for rendering (Only one environment in parallel or there is a bug with de video.txt file.
-    if args.render:
-        config["num_workers"] = 0
-        config["num_cpus_per_worker"] = 15
-        config["num_gpus"] = 1
-        config["num_cpus_for_driver"] = 1
-        config["num_envs_per_worker"] = 1
+    # if args.render:
+    config["num_workers"] = 0
+    config["num_cpus_per_worker"] = 40
+    config["num_gpus"] = 2
+    config["num_gpus_per_worker"] = 2
+    config["num_cpus_for_driver"] = 5
+    config["num_envs_per_worker"] = 10
 
     config['multiagent'] = {"policy_graphs": policy_graphs,
                             "policy_mapping_fn": policy_mapping_fn,
@@ -111,6 +114,6 @@ if __name__ == "__main__":
         print("-- PPO --")
         print(pretty_print(ppo_trainer.train()))
 
-        # if i % args.save_every == 0:
-        #     checkpoint = ppo_trainer.save()
-        #     print("checkpoint saved at", checkpoint)
+        if i % args.save_every == 0:
+            checkpoint = ppo_trainer.save()
+            print("checkpoint saved at", checkpoint)
