@@ -35,14 +35,16 @@ void Map::reset(int width, int height, bool food_mode) {
 
     memset(channel_ids, -1, sizeof(int) * w * h);
 
-    // init border
-    for (int i = 0; i < w; i++) {
-        add_wall(Position{i, 0});
-        add_wall(Position{i, h-1});
-    }
-    for (int i = 0; i < h; i++) {
-        add_wall(Position{0, i});
-        add_wall(Position{w-1, i});
+    if (!toric_grid) {
+        // init border:
+        for (int i = 0; i < w; i++) {
+            add_wall(Position{i, 0});
+            add_wall(Position{i, h-1});
+        }
+        for (int i = 0; i < h; i++) {
+            add_wall(Position{0, i});
+            add_wall(Position{w-1, i});
+        }
     }
 }
 
@@ -189,7 +191,7 @@ void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, 
     for (int x = start_x; x <= end_x; x++) {
         PositionInteger pos_int = pos2int(x, start_y);
         for (int y = start_y; y <= end_y; y++) {
-            int channel_id = channel_ids[pos_int];
+//            int channel_id = channel_ids[pos_int];
             if (range->is_in(view_y, view_x)) {
                 if (slots[pos_int].slot_type == OBSTACLE) { // Wall
                     buffer.at(view_y, view_x, 0) = 1;
@@ -385,9 +387,22 @@ PositionInteger Map::get_vaccine_obj(const VaccineAction &vaccine, int &obj_x, i
     save_to_real(agent, agent_x, agent_y);
     rela_to_abs(agent_x, agent_y, dir, vacc_x_offset + rela_x, vacc_y_offset + rela_y, obj_x, obj_y);
 
-    if (!in_board(obj_x, obj_y)) {
-        return -1;
+    if (!toric_grid) {
+        if (!in_board(obj_x, obj_y)) {
+            return -1;
+        }
     }
+
+    if (obj_x >= map_width)
+        obj_x = obj_x % map_width;
+    if (obj_x < 0)
+        obj_x = map_width + (obj_x % map_width);
+
+    if (obj_y >= map_height)
+        obj_y = obj_y % map_height;
+    if (obj_y < 0)
+        obj_y = map_height + (obj_y % map_height;
+
 
     PositionInteger pos_int = pos2int(obj_x, obj_y);
 
@@ -477,7 +492,7 @@ Reward Map::do_attack(Agent *agent, PositionInteger pos_int, GroupHandle &dead_g
 
 // do vaccine for agent, return vaccine_reward and immunized_group
 Reward Map::do_vaccine(Agent *agent, PositionInteger pos_int, GroupHandle &dead_group) {
-    // !! all the check should be done at Map::get_attack_obj
+    // !! all the check should be done at Map::get_vaccine_obj
 
     if (slots[pos_int].occupier == nullptr)  // dead
         return 0.0;
@@ -508,6 +523,18 @@ Reward Map::do_move(Agent *agent, const int delta[2]) {
     const int new_x = pos.x + delta[0], new_y = pos.y + delta[1];
     int width, height;
     get_size_for_dir(agent, width, height);
+
+    if (toric_grid) {
+        if (new_x >= map_width)
+            new_x_x = new_x % map_width;
+        if (new_x < 0)
+            new_x = map_width + (new_x % map_width);
+
+        if (new_y >= map_height)
+            new_y = new_y % map_height;
+        if (new_y < 0)
+            new_y = map_height + (new_y % map_height;
+    }
 
     bool blank = is_blank_area(new_x, new_y, width, height, agent);
     if (blank) {

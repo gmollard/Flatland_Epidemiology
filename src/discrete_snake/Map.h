@@ -71,6 +71,8 @@ private:
     Slot *slots;
 
     int map_width, map_height;
+
+    bool toric_grid;
 };
 
 } // namespace discrete_snake
