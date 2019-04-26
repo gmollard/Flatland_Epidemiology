@@ -55,7 +55,7 @@ def train_func(config, reporter):
     # Environment configuration
     env_config = {"map_size": config['map_size'],
                   "agent_generator": 'random_static_clusters_1_to_4_agents',
-                  "render": False,
+                  "render": True,
                   "num_static_blocks": 1,
                   "vaccine_reward": 0.1,
                   "n_agents": config["n_agents"]
@@ -74,7 +74,7 @@ def train_func(config, reporter):
     agent_config["num_gpus"] = 2
     agent_config["num_gpus_per_worker"] = 2
     agent_config["num_cpus_for_driver"] = 5
-    agent_config["num_envs_per_worker"] = 15
+    agent_config["num_envs_per_worker"] = 1
 
     agent_config['multiagent'] = {"policy_graphs": policy_graphs,
                             "policy_mapping_fn": policy_mapping_fn,
@@ -122,5 +122,5 @@ all_trials = tune.run(
         "cpu": 45,
         "gpu": 2
     },
-    local_dir="/mount/SDC/ray_results_single_agent"
+    # local_dir="/mount/SDC/ray_results_single_agent"
 )

@@ -20,7 +20,7 @@ from RLLib_scripts.GridWorldRLLibEnv import GridWorldRLLibEnv
 
 
 if __name__ == "__main__":
-    ray.init(object_store_memory=100000000000)
+    ray.init(object_store_memory=150000000000)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_every", type=int, default=100)
@@ -57,7 +57,7 @@ if __name__ == "__main__":
                   "agent_generator": "randomized_init",
                   "render": args.render,
                   "num_static_blocks": 1,
-                  "n_agents": [map_size**2 /100, map_size**2 / 50],
+                  "n_agents": [map_size**2 /50, map_size**2 / 20],
                   "vaccine_reward": 0.1
     }
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     config["num_gpus"] = 2
     config["num_gpus_per_worker"] = 2
     config["num_cpus_for_driver"] = 5
-    config["num_envs_per_worker"] = 10
+    config["num_envs_per_worker"] = 10 #10
 
     config['multiagent'] = {"policy_graphs": policy_graphs,
                             "policy_mapping_fn": policy_mapping_fn,
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     ppo_trainer = PPOAgent(env="gridworld", config=config)
 
     # To reload policies from a checkpoint
-    # ppo_trainer.restore('/mount/SDC/ray_results_ppo_rewaard_benchamark/ppo_vaccine_reward_01_vf_clip_param_1049dx2247/checkpoint_2801/checkpoint-2801')
+    ppo_trainer.restore('/home/guillaume/ray_results/PPO_gridworld_2019-04-25_21-18-17zpnm2m1v/checkpoint_101/checkpoint-101')
 
     for i in range(args.n_round + 2):
         print("== Iteration", i, "==")

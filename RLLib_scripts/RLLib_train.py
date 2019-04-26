@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # Specifying observation space and actions space dimensions.
     # TODO: take this as parameter and send it to the corresponding magent/builtin/config file.
     obs_space = gym.spaces.Tuple((gym.spaces.Box(low=0, high=1, shape=(31, 31, 6)),
-                                                gym.spaces.Box(low=0, high=1, shape=(21,) )))
+                                                gym.spaces.Box(low=0, high=1, shape=(21,))))
     act_space = (gym.spaces.Discrete(9))
 
     # Dict with the different policies to train
@@ -95,11 +95,11 @@ if __name__ == "__main__":
             "agent_generator": args.agent_generator,
             "render": args.render,
             "num_static_blocks": 1,
-            "n_agents": 4,
+            "n_agents": 1,
             "vaccine_reward": 0.1
     }
 
-    register_env("gridworld", lambda _: GridWorldRLLibEnv(env_config))
+    register_env("gridworld_1", lambda _: GridWorldRLLibEnv(env_config))
 
 
     # PPO Config specification
@@ -138,10 +138,10 @@ if __name__ == "__main__":
 
     # logger = logger_creator
 
-    ppo_trainer = PPOAgent(env="gridworld", config=config)#, logger_creator=logger)
+    ppo_trainer = PPOAgent(env="gridworld_1", config=config)#, logger_creator=logger)
 
     # To reload policies from a checkpoint
-    # ppo_trainer.restore('/mount/SDC/ray_results_single_agent/single_agentj2rdenlx/checkpoint_2802/checkpoint-2802')
+    ppo_trainer.restore('/mount/SDC/ray_results_single_agent/single_agent7aox2lpl/checkpoint_3403/checkpoint-3403')
 
 
     for i in range(args.n_round + 2):
