@@ -1063,7 +1063,7 @@ void GridWorld::get_info(GroupHandle group, const char *name, void *void_buffer)
         int_buffer[0] = (int)groups[group].get_type().action_space.size();
     } else if (strequ(name, "view_space")) {    // int
         if (infection_mode) {
-            groups[group].get_type().n_channel = 6;
+            groups[group].get_type().n_channel = 4;
         } else {
             // the following is necessary! user can call get_view_space before reset
             groups[group].get_type().n_channel = group2channel((GroupHandle)groups.size());
@@ -1137,7 +1137,7 @@ std::vector<int> GridWorld::make_channel_trans(
 
 int GridWorld::group2channel(GroupHandle group) {
     if (infection_mode)
-        return 6;
+        return 4;
     int base = 1;
     int scale = 2;
     if (food_mode)

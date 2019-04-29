@@ -24,16 +24,17 @@ class GridWorldRLLibEnv(MultiAgentEnv):
     def __init__(self, config):
         super(MultiAgentEnv, self).__init__()
         self.map_size = config["map_size"]
-        self.vaccine_reward = config["vaccine_reward"]
+        self.view_radius = config["view_radius"]
+        self.vaccine_reward = config['vaccine_reward']
         self.env = magent.GridWorld("agent_goal", map_size=self.map_size,
-                                    vaccine_reward=self.vaccine_reward)
+                                    vaccine_reward=self.vaccine_reward, view_radius=self.view_radius)
         self.handles = self.env.get_handles()
         self.render = config['render']
         self.n_agents = None
         if 'n_agents' in config.keys():
             self.n_agents = config['n_agents']
         if config["render"]:
-            self.env.set_render_dir("build/render")
+            self.env.set_render_dir("/home/guillaume/MAgent/build/render")
 
         # self.handles = config["handles"]
         self.agent_generator = config["agent_generator"]
@@ -54,7 +55,9 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         """
         self.env.reset()
         generate_map(self.env, self.map_size, self.handles, self.agent_generator, self.n_agents)
+        print("GET_OBSERVATIONS")
         observations = self.env.get_observation(self.handles[1], self.observation_mode)
+        print('GOT_IT')
         # assert(self.n_agents == self.env.get_num(self.handles[1]))
         self.agents = [f'agent_{i}' for i in range(self.env.get_num(self.handles[1]))]
         obs = {}
@@ -62,12 +65,15 @@ class GridWorldRLLibEnv(MultiAgentEnv):
             obs[agent_name] = [observations[0][i], observations[1][i]]#, observations[1][i]]
 
         if self.render:
+            print("RENDER")
             self.env.render()
 
         self.total_reward = 0
         self.num_infected = 1
 
         # self.count_step = 0
+        for j in range(4):
+            cv2.imwrite(f'obs_{j}.png', obs['agent_0'][0][:, :, j] * 255.0)
 
         return obs
 
@@ -85,7 +91,9 @@ class GridWorldRLLibEnv(MultiAgentEnv):
                 "__all__" (required) is used to indicate env termination.
             infos (dict): Optional info values for each agent id.
         """
-        self.env.set_action(self.handles[1], np.array([action_dict[agent_name]\
+        # self.env.set_action(self.handles[1], np.array([action_dict[agent_name]\
+        #                                                for agent_name in self.agents]).astype(np.int32))
+        self.env.set_action(self.handles[1], np.array([3 \
                                                        for agent_name in self.agents]).astype(np.int32))
         # # print(action_dict)
         # self.env.set_action(self.handles[1], np.array([action_dict]).astype(np.int32))

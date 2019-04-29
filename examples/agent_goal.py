@@ -276,12 +276,22 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
 
         print('Init time:', time.time()-t0)
 
+    elif agent_generator == 'toric_env':
+        population_pos = []
+        for i in range(0, map_size, 2):
+            for j in range(0, map_size, 2):
+                population_pos.append((i, j))
 
+        health_officials_pos = [(map_size / 4, map_size / 2), (map_size / 2, map_size / 4),
+                                (3 * map_size / 4, map_size / 2), (map_size / 2, 3 * map_size / 4)]
+        if (map_size / 4) % 2 == 0 and (map_size / 2) % 2 == 0:
+            health_officials_pos = [(map_size / 4 + 1, map_size / 2), (map_size / 2, map_size / 4 + 1),
+                                    (3 * map_size / 4 + 1, map_size / 2), (map_size / 2, 3 * map_size / 4 + 1)]
 
+        infected_id = np.random.randint(0, len(population_pos))
+        env.add_agents(handles[0], method="custom_infection", pos=population_pos, infected=[infected_id])
 
-
-
-
+        env.add_agents(handles[1], method="custom", pos=[health_officials_pos[0]])
 
     else:
         env.add_agents(handles[0], method="random", n=map_size*map_size*0.1)

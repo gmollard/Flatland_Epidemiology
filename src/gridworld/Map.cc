@@ -148,10 +148,18 @@ void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, 
 
     // find the coordinate of start point and end point in map
     int start_x, start_y, end_x, end_y;
-    start_x = std::max(std::min(x1, x2), 0);
-    end_x = std::min(std::max(x1, x2), w - 1);
-    start_y = std::max(std::min(y1, y2), 0);
-    end_y = std::min(std::max(y1, y2), h - 1);
+
+    if (toric_grid) {
+        start_x =  std::min(x1, x2);
+        end_x = std::max(x1, x2);
+        start_y = std::min(y1, y2);
+        end_y = std::max(y1, y2);
+    } else {
+        start_x = std::max(std::min(x1, x2), 0);
+        end_x = std::min(std::max(x1, x2), w - 1);
+        start_y = std::max(std::min(y1, y2), 0);
+        end_y = std::min(std::max(y1, y2), h - 1);
+    }
 
     NDPointer<float, 3> buffer(linear_buffer, {height, width, n_channel});
 
@@ -189,35 +197,65 @@ void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, 
 
 
     for (int x = start_x; x <= end_x; x++) {
-        PositionInteger pos_int = pos2int(x, start_y);
+        int corrected_x = x;
+        if (corrected_x >= w) {
+            corrected_x = x % (w);
+        }
+        if (corrected_x < 0) {
+            corrected_x = w + (x % (w));
+        }
+
+//        int transpose_start_y = start_y;
+//
+//        if (transpose_start_y >= h)
+//            transpose_start_y = transpose_start_y % h;
+//
+//        if (transpose_start_y < 0) {
+//            transpose_start_y = h + (transpose_start_y % h);
+//        }
+
+
         for (int y = start_y; y <= end_y; y++) {
+            int corrected_y = y;
+            if (corrected_y >= h) {
+                corrected_y = y % (h);
+            }
+            if (corrected_y < 0) {
+                corrected_y = h + (y % (h));
+            }
+            PositionInteger pos_int = pos2int(corrected_x, corrected_y);
+
 //            int channel_id = channel_ids[pos_int];
             if (range->is_in(view_y, view_x)) {
                 if (slots[pos_int].slot_type == OBSTACLE) { // Wall
-                    buffer.at(view_y, view_x, 0) = 1;
+                    std::cerr << view_y << "  " << view_x << std::endl;
+//                    buffer.at(view_y, view_x, 0) = 1;
+                    continue;
                 } else if (slots[pos_int].occupier != nullptr && slots[pos_int].occ_type == OCC_AGENT) {
                     Agent *p = ((Agent *) slots[pos_int].occupier);
 
                     if (p->get_id() == agent->get_id() && p->get_type().name == agent->get_type().name) {
-                        buffer.at(view_y, view_x, 1) = 1;
+//                        buffer.at(view_y, view_x, 0) = 1;
+                        continue;
                     } else if (p->get_type().name == "tiger") {
-                        buffer.at(view_y, view_x, 2) = 1;
+                        buffer.at(view_y, view_x, 0) = 1;
 //                        buffer.at(view_y, view_x, 2) = 1;
+//                        continue;
                     } else {
                         if (!p->is_infected() and !p->is_immunized()){
-                            buffer.at(view_y, view_x, 3) = 1;
+                            buffer.at(view_y, view_x, 1) = 1;
 //                            buffer.at(view_y, view_x, 3) = p->get_dist_infected();
                         } else if (p->is_infected()) {
-                            buffer.at(view_y, view_x, 4) = 1;
+                            buffer.at(view_y, view_x, 2) = 1;
                         } else {
-                            buffer.at(view_y, view_x, 5) = 1;
+                            buffer.at(view_y, view_x, 3) = 1;
 //                            buffer.at(view_y, view_x, 6) = p->get_dist_infected();
                         }
                     }
                 }
             }
             *p_view_inner += d_view_inner;
-            pos_int += MAP_INNER_Y_ADD;
+//            pos_int += MAP_INNER_Y_ADD;
         }
         *p_view_inner = start_inner;
         *p_view_outer += d_view_outer;
@@ -393,15 +431,15 @@ PositionInteger Map::get_vaccine_obj(const VaccineAction &vaccine, int &obj_x, i
         }
     }
 
-    if (obj_x >= map_width)
-        obj_x = obj_x % map_width;
+    if (obj_x >= w - 1)
+        obj_x = obj_x % (w-1);
     if (obj_x < 0)
-        obj_x = map_width + (obj_x % map_width);
+        obj_x = w-1 + (obj_x % (w-1));
 
-    if (obj_y >= map_height)
-        obj_y = obj_y % map_height;
+    if (obj_y >= h-1)
+        obj_y = obj_y % (h-1);
     if (obj_y < 0)
-        obj_y = map_height + (obj_y % map_height;
+        obj_y = h-1 + (obj_y % (h-1));
 
 
     PositionInteger pos_int = pos2int(obj_x, obj_y);
@@ -520,24 +558,27 @@ Reward Map::do_vaccine(Agent *agent, PositionInteger pos_int, GroupHandle &dead_
 // do move for agent, dx = delta[0], dy = delta[1]
 Reward Map::do_move(Agent *agent, const int delta[2]) {
     Position &pos = agent->get_pos();
-    const int new_x = pos.x + delta[0], new_y = pos.y + delta[1];
+    int new_x = pos.x + delta[0], new_y = pos.y + delta[1];
     int width, height;
     get_size_for_dir(agent, width, height);
 
     if (toric_grid) {
-        if (new_x >= map_width)
-            new_x_x = new_x % map_width;
+        if (new_x >= w - 1)
+            new_x = new_x % (w-1);
         if (new_x < 0)
-            new_x = map_width + (new_x % map_width);
+            new_x = w-1 + (new_x % (w-1));
 
-        if (new_y >= map_height)
-            new_y = new_y % map_height;
+        if (new_y >= h-1)
+            new_y = new_y % (h-1);
         if (new_y < 0)
-            new_y = map_height + (new_y % map_height;
+            new_y = h-1 + (new_y % (h-1));
     }
+
+    std::cerr << new_x << std::endl;
 
     bool blank = is_blank_area(new_x, new_y, width, height, agent);
     if (blank) {
+        std::cerr << "blank" << std::endl;
         PositionInteger old_pos_int = pos2int(pos);
 
         // backup old

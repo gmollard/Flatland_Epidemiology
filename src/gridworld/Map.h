@@ -32,7 +32,7 @@ public:
 class Map {
 public:
     Map(): slots(nullptr), channel_ids(nullptr), w(-1), h(-1),
-        wall_channel_id(0), food_channel_id(1) {
+        wall_channel_id(0), food_channel_id(1), toric_grid(true) {
     }
 
     ~Map() {
@@ -116,6 +116,8 @@ private:
     inline void fill_area(int x, int y, int width, int height,
                           void *occupier, OccupyType occ_type, int channel_id);
     inline void *get_collide(int x, int y, int width, int height, void *self);
+
+    bool toric_grid;
 };
 
 } // namespace gridworld

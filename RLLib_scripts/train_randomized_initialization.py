@@ -58,7 +58,7 @@ if __name__ == "__main__":
                   "render": args.render,
                   "num_static_blocks": 1,
                   "n_agents": [map_size**2 /50, map_size**2 / 20],
-                  "vaccine_reward": 0.1
+                  "vaccine_reward": 0.0
     }
 
     register_env("gridworld", lambda _: GridWorldRLLibEnv(env_config))
