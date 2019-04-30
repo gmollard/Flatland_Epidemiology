@@ -278,8 +278,8 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
 
     elif agent_generator == 'toric_env':
         population_pos = []
-        for i in range(0, map_size, 2):
-            for j in range(0, map_size, 2):
+        for i in range(0, map_size-1, 2):
+            for j in range(0, map_size-1, 2):
                 population_pos.append((i, j))
 
         health_officials_pos = [(map_size / 4, map_size / 2), (map_size / 2, map_size / 4),

@@ -34,7 +34,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         if 'n_agents' in config.keys():
             self.n_agents = config['n_agents']
         if config["render"]:
-            self.env.set_render_dir("/home/guillaume/MAgent/build/render")
+            self.env.set_render_dir("build/render")
 
         # self.handles = config["handles"]
         self.agent_generator = config["agent_generator"]
@@ -91,10 +91,10 @@ class GridWorldRLLibEnv(MultiAgentEnv):
                 "__all__" (required) is used to indicate env termination.
             infos (dict): Optional info values for each agent id.
         """
-        # self.env.set_action(self.handles[1], np.array([action_dict[agent_name]\
-        #                                                for agent_name in self.agents]).astype(np.int32))
-        self.env.set_action(self.handles[1], np.array([3 \
+        self.env.set_action(self.handles[1], np.array([action_dict[agent_name]\
                                                        for agent_name in self.agents]).astype(np.int32))
+        # self.env.set_action(self.handles[1], np.array([3 \
+        #                                                for agent_name in self.agents]).astype(np.int32))
         # # print(action_dict)
         # self.env.set_action(self.handles[1], np.array([action_dict]).astype(np.int32))
         done = self.env.step()

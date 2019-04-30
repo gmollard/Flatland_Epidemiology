@@ -631,8 +631,15 @@ void GridWorld::step(int *done) {
                             Position pos_healthy = healthy_agent->get_pos();
 
                             float radius = healthy_agent->get_type().infection_radius;
-                            float dist = sqrt(pow(pos_healthy.x - pos_infected.x, 2) +
-                             pow(pos_healthy.y - pos_infected.y, 2));
+                            double hor_dist_1 = std::min(pow(pos_healthy.x - pos_infected.x, 2),\
+                                                pow(width - 1 - pos_healthy.x + pos_infected.x, 2));
+                            float hor_dist = std::min(hor_dist_1, pow(width - 1 - pos_infected.x + pos_healthy.x, 2));
+
+                            double ver_dist = std::min(pow(pos_healthy.y - pos_infected.y,2),\
+                                                pow(height - 1 - pos_healthy.y + pos_infected.y, 2));
+                            ver_dist = std::min(ver_dist, pow(height - 1 - pos_infected.y + pos_healthy.y, 2));
+
+                            float dist = sqrt(hor_dist + ver_dist);
 
                             float r = uniform_distribution(random_generator);
                             if (dist <= radius)   {

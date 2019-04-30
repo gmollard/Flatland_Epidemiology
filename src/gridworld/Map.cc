@@ -172,6 +172,7 @@ void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, 
 
     int *p_view_inner, *p_view_outer;
     int d_view_inner, d_view_outer;
+
     switch (dir) {
         case NORTH:
             p_view_inner = &view_y; p_view_outer = &view_x;
@@ -195,61 +196,46 @@ void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, 
 
     int start_inner = *p_view_inner;
 
-
     for (int x = start_x; x <= end_x; x++) {
         int corrected_x = x;
-        if (corrected_x >= w) {
-            corrected_x = x % (w);
+        if (toric_grid) {
+            if (corrected_x >= w - 1) {
+                corrected_x = x % (w - 1);
+            }
+            if (corrected_x < 0) {
+                corrected_x = w - 1 + (x % (w - 1));
+            }
         }
-        if (corrected_x < 0) {
-            corrected_x = w + (x % (w));
-        }
-
-//        int transpose_start_y = start_y;
-//
-//        if (transpose_start_y >= h)
-//            transpose_start_y = transpose_start_y % h;
-//
-//        if (transpose_start_y < 0) {
-//            transpose_start_y = h + (transpose_start_y % h);
-//        }
-
 
         for (int y = start_y; y <= end_y; y++) {
             int corrected_y = y;
-            if (corrected_y >= h) {
-                corrected_y = y % (h);
+            if (toric_grid) {
+                if (corrected_y >= h - 1) {
+                    corrected_y = y % (h - 1);
+                }
+                if (corrected_y < 0) {
+                    corrected_y = h - 1 + (y % (h - 1));
+                }
             }
-            if (corrected_y < 0) {
-                corrected_y = h + (y % (h));
-            }
-            PositionInteger pos_int = pos2int(corrected_x, corrected_y);
 
-//            int channel_id = channel_ids[pos_int];
+            PositionInteger pos_int = pos2int(corrected_x, corrected_y);
             if (range->is_in(view_y, view_x)) {
                 if (slots[pos_int].slot_type == OBSTACLE) { // Wall
-                    std::cerr << view_y << "  " << view_x << std::endl;
-//                    buffer.at(view_y, view_x, 0) = 1;
-                    continue;
+                    std::cerr << view_y << "WALL " << view_x << std::endl;
+
                 } else if (slots[pos_int].occupier != nullptr && slots[pos_int].occ_type == OCC_AGENT) {
                     Agent *p = ((Agent *) slots[pos_int].occupier);
 
                     if (p->get_id() == agent->get_id() && p->get_type().name == agent->get_type().name) {
-//                        buffer.at(view_y, view_x, 0) = 1;
-                        continue;
                     } else if (p->get_type().name == "tiger") {
                         buffer.at(view_y, view_x, 0) = 1;
-//                        buffer.at(view_y, view_x, 2) = 1;
-//                        continue;
                     } else {
                         if (!p->is_infected() and !p->is_immunized()){
                             buffer.at(view_y, view_x, 1) = 1;
-//                            buffer.at(view_y, view_x, 3) = p->get_dist_infected();
                         } else if (p->is_infected()) {
                             buffer.at(view_y, view_x, 2) = 1;
                         } else {
                             buffer.at(view_y, view_x, 3) = 1;
-//                            buffer.at(view_y, view_x, 6) = p->get_dist_infected();
                         }
                     }
                 }
@@ -261,27 +247,6 @@ void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, 
         *p_view_outer += d_view_outer;
     }
 
-//        // scan the map
-//    for (int x = start_x; x <= end_x; x++) {
-//        PositionInteger pos_int = pos2int(x, start_y);
-//        for (int y = start_y; y <= end_y; y++) {
-//            int channel_id = channel_ids[pos_int];
-//
-//            if (channel_id != -1 && range->is_in(view_y, view_x)) {
-//                channel_id = channel_trans[channel_id];
-//                buffer.at(view_y, view_x, channel_id) = 1;
-//                if (slots[pos_int].occupier != nullptr && slots[pos_int].occ_type == OCC_AGENT) { // is agent
-//                    Agent *p = ((Agent *) slots[pos_int].occupier);
-//                    buffer.at(view_y, view_x, channel_id + 1) = p->get_hp() / p->get_type().hp; // normalize hp
-//                }
-//            }
-//
-//            *p_view_inner += d_view_inner;
-//            pos_int += MAP_INNER_Y_ADD;
-//        }
-//        *p_view_inner = start_inner;
-//        *p_view_outer += d_view_outer;
-//    }
 }
 
 
@@ -574,11 +539,9 @@ Reward Map::do_move(Agent *agent, const int delta[2]) {
             new_y = h-1 + (new_y % (h-1));
     }
 
-    std::cerr << new_x << std::endl;
 
     bool blank = is_blank_area(new_x, new_y, width, height, agent);
     if (blank) {
-        std::cerr << "blank" << std::endl;
         PositionInteger old_pos_int = pos2int(pos);
 
         // backup old
