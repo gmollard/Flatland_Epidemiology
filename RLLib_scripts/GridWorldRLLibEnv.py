@@ -24,17 +24,21 @@ class GridWorldRLLibEnv(MultiAgentEnv):
     def __init__(self, config):
         super(MultiAgentEnv, self).__init__()
         self.map_size = config["map_size"]
+        self.step_reward = config["step_reward"]
         self.view_radius = config["view_radius"]
         self.vaccine_reward = config['vaccine_reward']
+        self.final_reward = config['final_reward']
+        self.final_reward_times_healthy = config["final_reward_times_healthy"]
         self.env = magent.GridWorld("agent_goal", map_size=self.map_size,
-                                    vaccine_reward=self.vaccine_reward, view_radius=self.view_radius)
+                                    vaccine_reward=self.vaccine_reward, view_radius=self.view_radius,
+                                    step_reward=self.step_reward)
         self.handles = self.env.get_handles()
         self.render = config['render']
         self.n_agents = None
         if 'n_agents' in config.keys():
             self.n_agents = config['n_agents']
         if config["render"]:
-            self.env.set_render_dir("build/render")
+            self.env.set_render_dir("/home/guillaume/MAgent/build/render")
 
         # self.handles = config["handles"]
         self.agent_generator = config["agent_generator"]
@@ -111,8 +115,11 @@ class GridWorldRLLibEnv(MultiAgentEnv):
 
         self.total_reward += sum(rew)
         if dones['__all__']:
-            rew += 10*(self.env.get_num(self.handles[0]) -
+            if self.final_reward_times_healthy:
+                rew += self.final_reward*(self.env.get_num(self.handles[0]) -
                         (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0]))) / len(rew)
+            else:
+                rew += self.final_reward
 
             if (self.env.get_num(self.handles[0]) -
                         (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0]))) > 0:

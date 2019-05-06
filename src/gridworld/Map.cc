@@ -507,8 +507,11 @@ Reward Map::do_vaccine(Agent *agent, PositionInteger pos_int, GroupHandle &dead_
 
             bool vaccine = obj->be_vaccine(agent);
 
-            if (vaccine)
+            if (vaccine) {
                 agent->set_last_op(OP_VACCINE);
+            } else {
+
+            }
             agent->set_op_obj(obj);
             return 0.0;
             break;

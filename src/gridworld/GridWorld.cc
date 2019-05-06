@@ -335,6 +335,14 @@ void GridWorld::add_agents(GroupHandle group, int n, const char *method,
                 std::cout << "Infecting agent " << agent_index << "." << std::endl;
                 agents[agent_index]->infect_initialization();
             }
+
+            // BE CAREFUL: This assumes that a when adding agents with no infected people,
+            // the agents are all immunized !!
+            if (n*groups[group].get_prop_infected_init() == 0.0) {
+                for (int i = 0; i < agents.size(); i++) {
+                    agents[i]->immunized = true;
+                }
+            }
         }
     }
 
@@ -589,7 +597,7 @@ void GridWorld::step(int *done) {
             continue;
         }
 
-        if (stat) {
+        if (stat) {OP_VACCINE
             vaccine_obj_counter[obj_pos]++;
         }
 

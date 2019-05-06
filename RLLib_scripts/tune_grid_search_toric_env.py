@@ -8,8 +8,14 @@ import ray
 from ray.tune.logger import UnifiedLogger
 
 import ray.rllib.agents.ppo.ppo as ppo
+import ray.rllib.agents.dqn.dqn as dqn
 from ray.rllib.agents.ppo.ppo import PPOAgent
+from ray.rllib.agents.dqn.dqn import DQNAgent
 from ray.rllib.agents.ppo.ppo_policy_graph import PPOPolicyGraph
+from ray.rllib.agents.dqn.dqn_policy_graph import DQNPolicyGraph
+from ray.rllib.models import ModelCatalog
+
+from RLLib_scripts.RLLibCustomModel import LightModel
 
 from ray.tune.logger import pretty_print
 from ray.tune.registry import register_env
@@ -22,6 +28,9 @@ ray.init()
 
 
 def train_func(config, reporter):
+
+    ModelCatalog.register_custom_model("conv_model", LightModel)
+
     # init the game
     print('Init Env')
 
@@ -33,7 +42,7 @@ def train_func(config, reporter):
 
     policy_graphs = {}
     # Dict with the different policies to train
-    policy_graphs[f"ppo_policy_agent_0_vaccine_reward{str(config['vaccine_reward']).replace('.', '')}"] =\
+    policy_graphs[f"ppo_policy_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}"] =\
             (PPOPolicyGraph, obs_space, act_space, {})
     # else:
     #     for i in range(config['n_agents']):
@@ -41,7 +50,7 @@ def train_func(config, reporter):
     #             = (PPOPolicyGraph, obs_space, act_space, {})
 
     def policy_mapping_fn(agent_id):
-        return f"ppo_policy_agent_0_vaccine_reward{str(config['vaccine_reward']).replace('.', '')}"
+        return f"ppo_policy_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}"
         # if config['independent_training'] == "common_trainer_common_policy":
         #     return f"ppo_policy_agent_0_vaccine_reward{str(config['vaccine_reward']).replace('.', '')}"
         # else:
@@ -50,29 +59,38 @@ def train_func(config, reporter):
     # Environment configuration
     env_config = {"map_size": config['map_size'],
                   "agent_generator": 'toric_env',
-                  "render": True,
+                  "render": False,
                   "num_static_blocks": 1,
                   "n_agents": config["n_agents"],
                   "vaccine_reward": config["vaccine_reward"],
                   "view_radius": config["view_radius"],
+                  "step_reward": config["step_reward"],
+                  "final_reward": config["final_reward"],
+                  "final_reward_times_healthy": config["final_reward_times_healthy"]
                   }
 
-    register_env(f"gridworld_{config['n_agents']}",
+    register_env(f"gridworld_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}",
                  lambda _: GridWorldRLLibEnv(env_config))
 
     # PPO Config specification
     agent_config = ppo.DEFAULT_CONFIG.copy()
     # Here we use the default fcnet with modified hidden layers size
 
-    agent_config['model'] = {"fcnet_hiddens": config['hidden_sizes']}
+    # agent_config['model'] = {"fcnet_hiddens": config['hidden_sizes']}
+    agent_config['model'] = {"custom_model": "conv_model"}
 
     agent_config["num_workers"] = 0
-    agent_config["num_cpus_per_worker"] = 15
+    agent_config["num_cpus_per_worker"] = 10
     agent_config["num_gpus"] = 0.5
     agent_config["num_gpus_per_worker"] = 0.5
     agent_config["num_cpus_for_driver"] = 1
-    agent_config["num_envs_per_worker"] = 1
+    agent_config["num_envs_per_worker"] = 10
+    agent_config["batch_mode"] = "complete_episodes"
     agent_config["vf_clip_param"] = config['vf_clip_param']
+    agent_config["vf_share_layers"] = config['vf_share_layers']
+    agent_config["simple_optimizer"] = False
+    agent_config["entropy_coeff"] = config["entropy_coeff"]
+    # agent_config["n_step"] = 3
 
     agent_config['multiagent'] = {"policy_graphs": policy_graphs,
                                 "policy_mapping_fn": policy_mapping_fn,
@@ -82,17 +100,17 @@ def train_func(config, reporter):
         """Creates a Unified logger with a default logdir prefix
         containing the agent name and the env id
         """
-        logdir = f"toric_env_reward_{str(config['vaccine_reward']).replace('.', '')}"
+        logdir = f"ppo_policy_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}"
         logdir = tempfile.mkdtemp(
             prefix=logdir, dir=config['local_dir'])
         return UnifiedLogger(conf, logdir, None)
 
     logger = logger_creator
 
-    ppo_trainer = PPOAgent(env=f"gridworld_{config['n_agents']}", config=agent_config, logger_creator=logger)
+    ppo_trainer = PPOAgent(env=f"gridworld_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}",
+                           config=agent_config, logger_creator=logger)
 
-    # ppo_trainer.restore('/mount/SDC/ray_results/
-    # 1_agents_single_policy_Falsenjj_o0sl/checkpoint_1401/checkpoint-1401')
+    # ppo_trainer.restore('/mount/SDC/toric_env_grid_searches/simple_optimizer_constant_final_reward/ppo_policy_step_reward-001_final_reward_1eamh2814/checkpoint_1001/checkpoint-1001')
 
     for i in range(100000 + 2):
         print("== Iteration", i, "==")
@@ -109,7 +127,8 @@ def train_func(config, reporter):
 
 @gin.configurable
 def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_size, vaccine_reward,
-                vf_clip_param, num_iterations, local_dir):
+                vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
+                    final_reward_times_healthy, entropy_coeff, local_dir):
 
     tune.run(
         train_func,
@@ -122,10 +141,15 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "map_size": map_size,
                 "vaccine_reward": vaccine_reward,
                 "vf_clip_param": vf_clip_param,
+                "vf_share_layers": vf_share_layers,
+                "step_reward": step_reward,
+                "final_reward": final_reward,
+                "final_reward_times_healthy": final_reward_times_healthy,
+                "entropy_coeff": entropy_coeff,
                 "local_dir": local_dir
                 },
         resources_per_trial={
-            "cpu": 45,
+            "cpu": 11,
             "gpu": 0.5
         },
         local_dir=local_dir
@@ -136,7 +160,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/toric_env_grid_searches/first_test'
+    dir = '/mount/SDC/toric_env_grid_searches/vaccine_reward_test'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 

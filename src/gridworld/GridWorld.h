@@ -287,6 +287,8 @@ public:
     float get_dist_infected() const {return dist_infected;}
     void set_dist_infected(float dist) {dist_infected = dist;}
 
+    bool immunized;
+
 private:
     int id;
     bool dead;
@@ -313,7 +315,6 @@ private:
     int goal_radius;
 
     bool infected;
-    bool immunized;
     int vaccines_done;
 
     float dist_infected;

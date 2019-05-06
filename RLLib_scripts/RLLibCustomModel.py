@@ -88,15 +88,15 @@ class LightModel(Model):
         Dropout = tf.layers.dropout
         Dense = tf.contrib.layers.fully_connected
 
-        conv1 = Relu(self.conv2d(input_dict['obs'][0], 4, 'valid'))
+        conv1 = Relu(self.conv2d(input_dict['obs'][0], 32, 'valid'))
 
-        conv2 = Relu(self.conv2d(conv1, 4, 'valid'))
+        conv2 = Relu(self.conv2d(conv1, 16, 'valid'))
 
         # conv3 = Relu(self.conv2d(conv2, 64, 'valid'))
 
-        conv4_flat = tf.reshape(conv2, [-1, 4 * (31-2*2)**2])
+        conv4_flat = tf.reshape(conv2, [-1, 16 * (17-2*2)**2])
         conv4_feature = tf.concat((conv4_flat, input_dict['obs'][1]), axis=1)
-        s_fc1 = Relu(Dense(conv4_feature, 256, weights_initializer=normc_initializer(1.0)))
+        s_fc1 = Relu(Dense(conv4_feature, 128, weights_initializer=normc_initializer(1.0)))
         # layerN_minus_1 = Relu(Dense(s_fc1, 256, use_bias=False))
         layerN = Dense(s_fc1, num_outputs, weights_initializer=normc_initializer(0.01))
         return layerN, s_fc1
@@ -105,28 +105,28 @@ class LightModel(Model):
         return tf.layers.conv2d(x, out_channels, kernel_size=[3, 3], padding=padding, use_bias=True)
                                 # weights_initializer=normc_initializer(1.0))
 
-    def custom_loss(self, policy_loss, loss_inputs):
-        """Override to customize the loss function used to optimize this model.
-
-        This can be used to incorporate self-supervised losses (by defining
-        a loss over existing input and output tensors of this model), and
-        supervised losses (by defining losses over a variable-sharing copy of
-        this model's layers).
-
-        You can find an runnable example in examples/custom_loss.py.
-
-        Arguments:
-            policy_loss (Tensor): scalar policy loss from the policy graph.
-            loss_inputs (dict): map of input placeholders for rollout data.
-
-        Returns:
-            Scalar tensor for the customized loss for this model.
-        """
-        print("Los Inputs Shape: ", loss_inputs['obs'].shape)
-        print(policy_loss)
-        # print_action_prob = tf.print(loss_inputs['actions'], summarize=200)
-        # with tf.control_dependencies([print_action_prob]):
-        #     tf.multiply(print_action_prob, print_action_prob)
-        # self.sess.run()
-        return tf.reduce_mean(policy_loss)
+    # def custom_loss(self, policy_loss, loss_inputs):
+    #     """Override to customize the loss function used to optimize this model.
+    #
+    #     This can be used to incorporate self-supervised losses (by defining
+    #     a loss over existing input and output tensors of this model), and
+    #     supervised losses (by defining losses over a variable-sharing copy of
+    #     this model's layers).
+    #
+    #     You can find an runnable example in examples/custom_loss.py.
+    #
+    #     Arguments:
+    #         policy_loss (Tensor): scalar policy loss from the policy graph.
+    #         loss_inputs (dict): map of input placeholders for rollout data.
+    #
+    #     Returns:
+    #         Scalar tensor for the customized loss for this model.
+    #     """
+    #     # print("Los Inputs Shape: ", loss_inputs['obs'].shape)
+    #     # print(policy_loss)
+    #     # print_action_prob = tf.print(loss_inputs['actions'], summarize=200)
+    #     # with tf.control_dependencies([print_action_prob]):
+    #     #     tf.multiply(print_action_prob, print_action_prob)
+    #     # self.sess.run()
+    #     return tf.reduce_mean(policy_loss)
 
