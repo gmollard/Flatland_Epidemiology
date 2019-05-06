@@ -510,7 +510,7 @@ Reward Map::do_vaccine(Agent *agent, PositionInteger pos_int, GroupHandle &dead_
             if (vaccine) {
                 agent->set_last_op(OP_VACCINE);
             } else {
-
+                return agent->get_type().bad_vaccine_penalty;
             }
             agent->set_op_obj(obj);
             return 0.0;

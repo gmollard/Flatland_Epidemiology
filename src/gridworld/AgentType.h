@@ -58,6 +58,8 @@ public:
     float infection_probability;
 
     float vaccine_reward;
+
+    float bad_vaccine_penalty;
 };
 
 

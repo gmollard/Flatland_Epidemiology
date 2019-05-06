@@ -50,6 +50,7 @@ AgentType::AgentType(int n, std::string name, const char **keys, float *values, 
     can_absorb = false;
     infection_radius = 0.0;
     infection_probability = 0.0;
+    bad_vaccine_penalty = 0.0;
 
     // init member vars from str (reflection)
     bool is_set;
@@ -83,9 +84,11 @@ AgentType::AgentType(int n, std::string name, const char **keys, float *values, 
         AGENT_TYPE_SET_FLOAT(turn_x_offset); AGENT_TYPE_SET_FLOAT(turn_y_offset);
 
         AGENT_TYPE_SET_FLOAT(infection_radius);
-        AGENT_TYPE_SET_FLOAT(infection_probability)
+        AGENT_TYPE_SET_FLOAT(infection_probability);
 
-        AGENT_TYPE_SET_FLOAT(vaccine_reward)
+        AGENT_TYPE_SET_FLOAT(vaccine_reward);
+
+        AGENT_TYPE_SET_FLOAT(bad_vaccine_penalty);
 
         if (!is_set) {
             LOG(FATAL) << "invalid agent config in AgentType::AgentType : " << keys[i];

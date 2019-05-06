@@ -28,6 +28,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.view_radius = config["view_radius"]
         self.vaccine_reward = config['vaccine_reward']
         self.final_reward = config['final_reward']
+        self.bad_vaccine_penalty = config['bad_vaccine_penalty']
+        self.collide_penalty = config['collide_penalty']
         self.final_reward_times_healthy = config["final_reward_times_healthy"]
         self.env = magent.GridWorld("agent_goal", map_size=self.map_size,
                                     vaccine_reward=self.vaccine_reward, view_radius=self.view_radius,
@@ -38,7 +40,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         if 'n_agents' in config.keys():
             self.n_agents = config['n_agents']
         if config["render"]:
-            self.env.set_render_dir("/home/guillaume/MAgent/build/render")
+            self.env.set_render_dir("build/render")
 
         # self.handles = config["handles"]
         self.agent_generator = config["agent_generator"]

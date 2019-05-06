@@ -66,7 +66,9 @@ def train_func(config, reporter):
                   "view_radius": config["view_radius"],
                   "step_reward": config["step_reward"],
                   "final_reward": config["final_reward"],
-                  "final_reward_times_healthy": config["final_reward_times_healthy"]
+                  "final_reward_times_healthy": config["final_reward_times_healthy"],
+                  "bad_vaccine_penalty": -0.1,
+                  "collide_penalty": -0.1
                   }
 
     register_env(f"gridworld_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}",

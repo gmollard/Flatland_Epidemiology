@@ -593,11 +593,11 @@ void GridWorld::step(int *done) {
 //            render_vaccine_buffer.emplace_back(RenderAttackEvent{agent->get_id(), obj_x, obj_y});
 
         if (obj_pos == -1) {  // attack blank block
-//            agent->add_reward(agent->get_type().attack_penalty);
+            agent->add_reward(agent->get_type().bad_vaccine_penalty);
             continue;
         }
 
-        if (stat) {OP_VACCINE
+        if (stat) {
             vaccine_obj_counter[obj_pos]++;
         }
 
