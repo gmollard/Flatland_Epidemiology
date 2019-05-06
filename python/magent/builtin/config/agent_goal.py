@@ -3,7 +3,7 @@
 import magent
 
 
-def get_config(map_size, vaccine_reward=1):
+def get_config(map_size, vaccine_reward=1, view_radius=15, step_reward=-0.01):
     gw = magent.gridworld
 
     cfg = gw.Config()
@@ -24,10 +24,10 @@ def get_config(map_size, vaccine_reward=1):
     tiger = cfg.register_agent_type(
         "tiger",
         {'width': 1, 'length': 1, 'hp': 10, 'speed': 1,
-         'view_range': gw.CircleRange(15), 'attack_range': gw.CircleRange(0), 'vaccine_range': gw.CircleRange(1),
+         'view_range': gw.CircleRange(view_radius), 'attack_range': gw.CircleRange(0), 'vaccine_range': gw.CircleRange(1),
          'damage': 1, 'step_recover': 0.0,
          'food_supply': 0, 'kill_supply': 0,
-         'step_reward': -0.01, 'attack_penalty': 0.0, "vaccine_reward": vaccine_reward
+         'step_reward': step_reward, 'attack_penalty': 0.0, "vaccine_reward": vaccine_reward
          # 'infection_radius': 2, 'infection_probability': 0.1
          })
 
@@ -44,7 +44,8 @@ def get_config(map_size, vaccine_reward=1):
     b = gw.AgentSymbol(deer_group, index='any')
 
     # cfg.add_reward_rule(gw.Event(b, 'infected'), receiver=[b], value=[-10])
-    cfg.add_reward_rule(gw.Event(a, 'vaccine', b), receiver=[a], value=[1])
+    cfg.add_reward_rule(gw.Event(a, 'collide'), receiver=[a], value=[-0.1])
+    # cfg.add_reward_rule(gw.Event(a, 'vaccine', b), receiver=[a], value=[1])
     # print('ok')
     # cfg.add_reward_rule(gw.Event(b, 'attack', a), receiver=[a,b], value=[10000, 10000])
 
