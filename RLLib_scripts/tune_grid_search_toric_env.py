@@ -24,6 +24,18 @@ from RLLib_scripts.GridWorldRLLibEnv import GridWorldRLLibEnv
 from ray import tune
 import gin
 
+from ray.rllib.models.preprocessors import Preprocessor
+import numpy as np
+
+class MyPreprocessorClass(Preprocessor):
+    def _init_shape(self, obs_space, options):
+        return (4*17**2 + 21,)
+
+    def transform(self, observation):
+        #print(np.concatenate([observation[0].flatten(), observation[1]]).shape)
+        return np.concatenate([observation[0].flatten(), observation[1]])  # return the preprocessed observation
+
+ModelCatalog.register_custom_preprocessor("my_prep", MyPreprocessorClass)
 ray.init()
 
 
@@ -77,9 +89,9 @@ def train_func(config, reporter):
     # PPO Config specification
     agent_config = ppo.DEFAULT_CONFIG.copy()
     # Here we use the default fcnet with modified hidden layers size
-
-    # agent_config['model'] = {"fcnet_hiddens": config['hidden_sizes']}
-    agent_config['model'] = {"custom_model": "conv_model"}
+    print('DEFAULT_PREPROCESSOR:', agent_config['preprocessor_pref'])
+    agent_config['model'] = {"fcnet_hiddens": config['hidden_sizes'], "custom_preprocessor": "my_prep"}
+    #agent_config['model'] = {"custom_model": "conv_model"}
 
     agent_config["num_workers"] = 0
     agent_config["num_cpus_per_worker"] = 10
@@ -162,7 +174,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/toric_env_grid_searches/vaccine_reward_test'
+    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/entropy_coeff_grid_search'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
