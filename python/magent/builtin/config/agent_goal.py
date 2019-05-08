@@ -20,7 +20,7 @@ def get_config(map_size, vaccine_reward=1, view_radius=15, step_reward=-0.01, ba
          'view_range': gw.CircleRange(1), 'attack_range': gw.CircleRange(0),
          'damage': 0, 'step_recover': 0.0,
          'food_supply': 0, 'kill_supply': 8, 'kill_reward': 0, 'vaccine_range': gw.CircleRange(0),
-         'infection_radius': 2, 'infection_probability': 0.02
+         'infection_radius': 2, 'infection_probability': 0.00
          })
 
     tiger = cfg.register_agent_type(

@@ -50,6 +50,10 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         # self.observation_space = gym.spaces.Tuple((gym.spaces.Space((31,31,6)), gym.spaces.Space((21,))))
         self.observation_mode = "dist_map"#config["view_mode"]
 
+        self.horizon = False
+        if "horizon" in config.keys():
+            self.horizon = config["horizon"]
+
 
 
 
@@ -76,6 +80,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
 
         self.total_reward = 0
         self.num_infected = 1
+        self.step_count = 0
 
         # self.count_step = 0
         for j in range(4):
@@ -146,6 +151,11 @@ class GridWorldRLLibEnv(MultiAgentEnv):
 
         if self.render:
             self.env.render()
+
+        if self.horizon:
+            if self.step_count == self.horizon:
+                dones['__all__'] = True
+            self.step_count += 1
 
         # if self.count_step == 50:
         #     for j in range(7):

@@ -33,15 +33,13 @@ class MyPreprocessorClass(Preprocessor):
 
     def transform(self, observation):
         #print(np.concatenate([observation[0].flatten(), observation[1]]).shape)
-        return np.concatenate([observation[0].flatten(), observation[1]])  # return the preprocessed observation
+        return np.concatenate([(observation[0]*2 - 1).flatten(), observation[1]])  # return the preprocessed observation
 
 ModelCatalog.register_custom_preprocessor("my_prep", MyPreprocessorClass)
-ray.init()
-
+ray.init(object_store_memory=150000000000)
+ModelCatalog.register_custom_model("conv_model", LightModel)
 
 def train_func(config, reporter):
-
-    ModelCatalog.register_custom_model("conv_model", LightModel)
 
     # init the game
     print('Init Env')
@@ -80,7 +78,8 @@ def train_func(config, reporter):
                   "final_reward": config["final_reward"],
                   "final_reward_times_healthy": config["final_reward_times_healthy"],
                   "bad_vaccine_penalty": -0.1,
-                  "collide_penalty": -0.1
+                  "collide_penalty": -0.1,
+                  "horizon": config["horizon"]
                   }
 
     register_env(f"gridworld_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}",
@@ -95,8 +94,8 @@ def train_func(config, reporter):
 
     agent_config["num_workers"] = 0
     agent_config["num_cpus_per_worker"] = 10
-    agent_config["num_gpus"] = 0.5
-    agent_config["num_gpus_per_worker"] = 0.5
+    agent_config["num_gpus"] = 0.25
+    agent_config["num_gpus_per_worker"] = 0.25
     agent_config["num_cpus_for_driver"] = 1
     agent_config["num_envs_per_worker"] = 10
     agent_config["batch_mode"] = "complete_episodes"
@@ -142,7 +141,7 @@ def train_func(config, reporter):
 @gin.configurable
 def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_size, vaccine_reward,
                 vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
-                    final_reward_times_healthy, entropy_coeff, local_dir):
+                    final_reward_times_healthy, entropy_coeff, local_dir, horizon=False):
 
     tune.run(
         train_func,
@@ -160,11 +159,12 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "final_reward": final_reward,
                 "final_reward_times_healthy": final_reward_times_healthy,
                 "entropy_coeff": entropy_coeff,
-                "local_dir": local_dir
+                "local_dir": local_dir,
+                "horizon": horizon
                 },
         resources_per_trial={
             "cpu": 11,
-            "gpu": 0.5
+            "gpu": 0.25
         },
         local_dir=local_dir
     )
@@ -174,7 +174,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/entropy_coeff_grid_search'
+    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/entropy_coeff_grid_search_4_agents_no_infection_propagation_-1_+1'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
