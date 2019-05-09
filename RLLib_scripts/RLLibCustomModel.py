@@ -88,15 +88,15 @@ class LightModel(Model):
         Dropout = tf.layers.dropout
         Dense = tf.contrib.layers.fully_connected
 
-        conv1 = Relu(self.conv2d(input_dict['obs'][0], 32, 'valid'))
-
+        #conv1 = Relu(self.conv2d(input_dict['obs'][0], 32, 'valid'))
+        conv1 = Relu(self.conv2d(input_dict['obs'], 32, 'valid'))
         conv2 = Relu(self.conv2d(conv1, 16, 'valid'))
 
         # conv3 = Relu(self.conv2d(conv2, 64, 'valid'))
 
         conv4_flat = tf.reshape(conv2, [-1, 16 * (17-2*2)**2])
-        conv4_feature = tf.concat((conv4_flat, input_dict['obs'][1]), axis=1)
-        s_fc1 = Relu(Dense(conv4_feature, 128, weights_initializer=normc_initializer(1.0)))
+        #conv4_feature = tf.concat((conv4_flat, input_dict['obs'][1]), axis=1)
+        s_fc1 = Relu(Dense(conv4_flat, 128, weights_initializer=normc_initializer(1.0)))
         # layerN_minus_1 = Relu(Dense(s_fc1, 256, use_bias=False))
         layerN = Dense(s_fc1, num_outputs, weights_initializer=normc_initializer(0.01))
         return layerN, s_fc1

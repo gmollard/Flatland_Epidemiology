@@ -33,7 +33,8 @@ class MyPreprocessorClass(Preprocessor):
 
     def transform(self, observation):
         #print(np.concatenate([observation[0].flatten(), observation[1]]).shape)
-        return np.concatenate([(observation[0]*2 - 1).flatten(), observation[1]])  # return the preprocessed observation
+        #return observation[0]
+        return np.concatenate([observation[0].flatten(), observation[1]])  # return the preprocessed observation
 
 ModelCatalog.register_custom_preprocessor("my_prep", MyPreprocessorClass)
 ray.init(object_store_memory=150000000000)
@@ -52,7 +53,7 @@ def train_func(config, reporter):
 
     policy_graphs = {}
     # Dict with the different policies to train
-    policy_graphs[f"ppo_policy_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}"] =\
+    policy_graphs[f"ppo_policy_horizon_{str(config['horizon']).replace('.', '')}"] =\
             (PPOPolicyGraph, obs_space, act_space, {})
     # else:
     #     for i in range(config['n_agents']):
@@ -60,7 +61,7 @@ def train_func(config, reporter):
     #             = (PPOPolicyGraph, obs_space, act_space, {})
 
     def policy_mapping_fn(agent_id):
-        return f"ppo_policy_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}"
+        return f"ppo_policy_horizon_{str(config['horizon']).replace('.', '')}"
         # if config['independent_training'] == "common_trainer_common_policy":
         #     return f"ppo_policy_agent_0_vaccine_reward{str(config['vaccine_reward']).replace('.', '')}"
         # else:
@@ -82,20 +83,20 @@ def train_func(config, reporter):
                   "horizon": config["horizon"]
                   }
 
-    register_env(f"gridworld_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}",
+    register_env(f"gridworld_horizon_{str(config['horizon']).replace('.', '')}",
                  lambda _: GridWorldRLLibEnv(env_config))
 
     # PPO Config specification
     agent_config = ppo.DEFAULT_CONFIG.copy()
     # Here we use the default fcnet with modified hidden layers size
-    print('DEFAULT_PREPROCESSOR:', agent_config['preprocessor_pref'])
+    #print('DEFAULT_PREPROCESSOR:', agent_config['preprocessor_pref'])
     agent_config['model'] = {"fcnet_hiddens": config['hidden_sizes'], "custom_preprocessor": "my_prep"}
-    #agent_config['model'] = {"custom_model": "conv_model"}
+    #agent_config['model'] = {"custom_model": "conv_model", "custom_preprocessor": "my_prep"}
 
     agent_config["num_workers"] = 0
     agent_config["num_cpus_per_worker"] = 10
-    agent_config["num_gpus"] = 0.25
-    agent_config["num_gpus_per_worker"] = 0.25
+    agent_config["num_gpus"] = 0.5
+    agent_config["num_gpus_per_worker"] = 0.5
     agent_config["num_cpus_for_driver"] = 1
     agent_config["num_envs_per_worker"] = 10
     agent_config["batch_mode"] = "complete_episodes"
@@ -113,14 +114,14 @@ def train_func(config, reporter):
         """Creates a Unified logger with a default logdir prefix
         containing the agent name and the env id
         """
-        logdir = f"ppo_policy_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}"
+        logdir = f"ppo_policy_horizon_{str(config['horizon']).replace('.', '')}"
         logdir = tempfile.mkdtemp(
             prefix=logdir, dir=config['local_dir'])
         return UnifiedLogger(conf, logdir, None)
 
     logger = logger_creator
 
-    ppo_trainer = PPOAgent(env=f"gridworld_entropy_coeff_{str(config['entropy_coeff']).replace('.', '')}",
+    ppo_trainer = PPOAgent(env=f"gridworld_horizon_{str(config['horizon']).replace('.', '')}",
                            config=agent_config, logger_creator=logger)
 
     # ppo_trainer.restore('/mount/SDC/toric_env_grid_searches/simple_optimizer_constant_final_reward/ppo_policy_step_reward-001_final_reward_1eamh2814/checkpoint_1001/checkpoint-1001')
@@ -164,7 +165,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 },
         resources_per_trial={
             "cpu": 11,
-            "gpu": 0.25
+            "gpu": 0.5
         },
         local_dir=local_dir
     )
@@ -174,7 +175,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/entropy_coeff_grid_search_4_agents_no_infection_propagation_-1_+1'
+    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/horizon_grid_search'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
