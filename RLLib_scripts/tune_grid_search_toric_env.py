@@ -53,7 +53,7 @@ def train_func(config, reporter):
 
     policy_graphs = {}
     # Dict with the different policies to train
-    policy_graphs[f"ppo_policy_horizon_{str(config['horizon']).replace('.', '')}"] =\
+    policy_graphs[f"ppo_policy_horizon_{str(config['learning_rate']).replace('.', '')}"] =\
             (PPOPolicyGraph, obs_space, act_space, {})
     # else:
     #     for i in range(config['n_agents']):
@@ -61,7 +61,7 @@ def train_func(config, reporter):
     #             = (PPOPolicyGraph, obs_space, act_space, {})
 
     def policy_mapping_fn(agent_id):
-        return f"ppo_policy_horizon_{str(config['horizon']).replace('.', '')}"
+        return f"ppo_policy_horizon_{str(config['learning_rate']).replace('.', '')}"
         # if config['independent_training'] == "common_trainer_common_policy":
         #     return f"ppo_policy_agent_0_vaccine_reward{str(config['vaccine_reward']).replace('.', '')}"
         # else:
@@ -83,7 +83,7 @@ def train_func(config, reporter):
                   "horizon": config["horizon"]
                   }
 
-    register_env(f"gridworld_horizon_{str(config['horizon']).replace('.', '')}",
+    register_env(f"gridworld_horizon_{str(config['learning_rate']).replace('.', '')}",
                  lambda _: GridWorldRLLibEnv(env_config))
 
     # PPO Config specification
@@ -110,18 +110,20 @@ def train_func(config, reporter):
                                 "policy_mapping_fn": policy_mapping_fn,
                                 "policies_to_train": list(policy_graphs.keys())}
 
+    agent_config['lr'] = config['learning_rate']
+    agent_config['horizon'] = config['horizon']
     def logger_creator(conf):
         """Creates a Unified logger with a default logdir prefix
         containing the agent name and the env id
         """
-        logdir = f"ppo_policy_horizon_{str(config['horizon']).replace('.', '')}"
+        logdir = f"ppo_policy_horizon_{str(config['learning_rate']).replace('.', '')}"
         logdir = tempfile.mkdtemp(
             prefix=logdir, dir=config['local_dir'])
         return UnifiedLogger(conf, logdir, None)
 
     logger = logger_creator
 
-    ppo_trainer = PPOAgent(env=f"gridworld_horizon_{str(config['horizon']).replace('.', '')}",
+    ppo_trainer = PPOAgent(env=f"gridworld_horizon_{str(config['learning_rate']).replace('.', '')}",
                            config=agent_config, logger_creator=logger)
 
     # ppo_trainer.restore('/mount/SDC/toric_env_grid_searches/simple_optimizer_constant_final_reward/ppo_policy_step_reward-001_final_reward_1eamh2814/checkpoint_1001/checkpoint-1001')
@@ -142,7 +144,7 @@ def train_func(config, reporter):
 @gin.configurable
 def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_size, vaccine_reward,
                 vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
-                    final_reward_times_healthy, entropy_coeff, local_dir, horizon=False):
+                    final_reward_times_healthy, entropy_coeff, local_dir, learning_rate, horizon=False):
 
     tune.run(
         train_func,
@@ -161,7 +163,8 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "final_reward_times_healthy": final_reward_times_healthy,
                 "entropy_coeff": entropy_coeff,
                 "local_dir": local_dir,
-                "horizon": horizon
+                "horizon": horizon,
+		"learning_rate": learning_rate
                 },
         resources_per_trial={
             "cpu": 11,
@@ -175,7 +178,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/horizon_grid_search'
+    dir = '/home/guillaume/sdd/toric_env_grid_searches/learning_rate_grid_search'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 

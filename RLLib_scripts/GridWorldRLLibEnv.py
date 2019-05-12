@@ -51,8 +51,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.observation_mode = "dist_map"#config["view_mode"]
 
         self.horizon = False
-        if "horizon" in config.keys():
-            self.horizon = config["horizon"]
+        #if "horizon" in config.keys():
+        #    self.horizon = config["horizon"]
 
 
 
@@ -152,10 +152,10 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         if self.render:
             self.env.render()
 
-        if self.horizon:
-            if self.step_count == self.horizon:
-                dones['__all__'] = True
-            self.step_count += 1
+        #if self.horizon:
+        #    if self.step_count == self.horizon:
+        #        dones['__all__'] = True
+        #    self.step_count += 1
 
         # if self.count_step == 50:
         #     for j in range(7):
