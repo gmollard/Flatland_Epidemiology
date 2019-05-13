@@ -31,9 +31,10 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.bad_vaccine_penalty = config['bad_vaccine_penalty']
         self.collide_penalty = config['collide_penalty']
         self.final_reward_times_healthy = config["final_reward_times_healthy"]
+        self.infection_prob = config['infection_prob']
         self.env = magent.GridWorld("agent_goal", map_size=self.map_size,
                                     vaccine_reward=self.vaccine_reward, view_radius=self.view_radius,
-                                    step_reward=self.step_reward)
+                                    step_reward=self.step_reward, infection_prob=self.infection_prob)
         self.handles = self.env.get_handles()
         self.render = config['render']
         self.n_agents = None
