@@ -291,7 +291,7 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
         infected_id = np.random.randint(0, len(population_pos))
         env.add_agents(handles[0], method="custom_infection", pos=population_pos, infected=[infected_id])
 
-        env.add_agents(handles[1], method="custom", pos=health_officials_pos)
+        env.add_agents(handles[1], method="custom", pos=health_officials_pos[:n_agents])
 
     else:
         env.add_agents(handles[0], method="random", n=map_size*map_size*0.1)

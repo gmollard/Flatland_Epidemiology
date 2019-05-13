@@ -44,6 +44,8 @@ def train_func(config, reporter):
 
     # init the game
     print('Init Env')
+    env_name = f"gridworld_infection_prob{str(config['infection_prob']).replace('.','')}_n_agents_{config['n_agents']}"
+    policy_name = f"ppo_policy_infection_prob{str(config['infection_prob']).replace('.','')}_n_agents_{config['n_agents']}"
 
     # Specifying observation space and actions space dimensions.
     view_radius = config["view_radius"]*2 + 1
@@ -53,15 +55,14 @@ def train_func(config, reporter):
 
     policy_graphs = {}
     # Dict with the different policies to train
-    policy_graphs[f"ppo_policy_infection_prob_{str(config['infection_prob']).replace('.', '')}"] =\
-            (PPOPolicyGraph, obs_space, act_space, {})
+    policy_graphs[policy_name] = (PPOPolicyGraph, obs_space, act_space, {})
     # else:
     #     for i in range(config['n_agents']):
     #         policy_graphs[f"ppo_policy_agent_{i}_independent_training_{config['independent_training']}"]\
     #             = (PPOPolicyGraph, obs_space, act_space, {})
 
     def policy_mapping_fn(agent_id):
-        return f"ppo_policy_infection_prob_{str(config['infection_prob']).replace('.', '')}"
+        return policy_name
         # if config['independent_training'] == "common_trainer_common_policy":
         #     return f"ppo_policy_agent_0_vaccine_reward{str(config['vaccine_reward']).replace('.', '')}"
         # else:
@@ -84,8 +85,7 @@ def train_func(config, reporter):
                   "infection_prob": config["infection_prob"]
                   }
 
-    register_env(f"gridworld_infection_prob_{str(config['infection_prob']).replace('.', '')}",
-                 lambda _: GridWorldRLLibEnv(env_config))
+    register_env(env_name, lambda _: GridWorldRLLibEnv(env_config))
 
     # PPO Config specification
     agent_config = ppo.DEFAULT_CONFIG.copy()
@@ -117,15 +117,14 @@ def train_func(config, reporter):
         """Creates a Unified logger with a default logdir prefix
         containing the agent name and the env id
         """
-        logdir = f"ppo_policy_infection_prob_{str(config['infection_prob']).replace('.', '')}"
+        logdir = f"ppo_policy_infection_prob_{str(config['infection_prob']).replace('.', '')}_n_agents_{config['n_agents']}"
         logdir = tempfile.mkdtemp(
             prefix=logdir, dir=config['local_dir'])
         return UnifiedLogger(conf, logdir, None)
 
     logger = logger_creator
 
-    ppo_trainer = PPOAgent(env=f"gridworld_infection_prob_{str(config['infection_prob']).replace('.', '')}",
-                           config=agent_config, logger_creator=logger)
+    ppo_trainer = PPOAgent(env=env_name, config=agent_config, logger_creator=logger)
 
     # ppo_trainer.restore('/mount/SDC/toric_env_grid_searches/simple_optimizer_constant_final_reward/ppo_policy_step_reward-001_final_reward_1eamh2814/checkpoint_1001/checkpoint-1001')
 
@@ -180,7 +179,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/infection_prob_grid_search'
+    dir = '/home/guillaume/sdd/toric_env_grid_searches/infection_prob_n_agents/'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
