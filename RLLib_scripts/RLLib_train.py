@@ -35,7 +35,6 @@ parser.add_argument("--num-iters", type=int, default=20)
 if __name__ == "__main__":
     ray.init()
     # Here we register the custom models
-    ModelCatalog.register_custom_model("my_model", RLLibCustomModel)
     ModelCatalog.register_custom_model("light_model", LightModel)
 
 

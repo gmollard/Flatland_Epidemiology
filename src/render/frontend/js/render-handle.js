@@ -451,7 +451,7 @@ function _drawAgent() {
 //                }, 0);
 //            }
 
-            if (infection_state == 0) {
+            if (infection_state == 0 || style['style'] == "rgba(255,255,10,1)") {
                 _agentBodyCTX.fillStyle = style['style'];
                 _agentHPCTX.fillStyle = style['style'];
             } else if (infection_state == 1) {

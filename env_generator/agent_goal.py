@@ -14,7 +14,7 @@ import cv2
 import os
 
 reward_array = []
-def generate_map(env, map_size, handles, agent_generator, n_agents=None, infection_range=None):
+def generate_map(env, map_size, handles, agent_generator, n_agents=None, infection_range=None, n_infected_init=1):
     # env.add_walls(method="random", n=map_size*map_size*0.04)
     if agent_generator == 'random_clusters':
         n_agent_per_cluster = 81
@@ -292,6 +292,23 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
         env.add_agents(handles[0], method="custom_infection", pos=population_pos, infected=[infected_id])
 
         env.add_agents(handles[1], method="custom", pos=health_officials_pos)
+    elif agent_generator == 'large_toric_env':
+        population_pos = []
+        for i in range(0, map_size-1, 2):
+            for j in range(0, map_size-1, 2):
+                population_pos.append((i, j))
+
+        health_officials_pos = []
+        for i in range(1, map_size, 8):
+            for j in range(0, map_size - 1, 8):
+                health_officials_pos.append((i, j))
+
+        infected_ids = np.random.choice(range(len(population_pos)), n_infected_init, replace=False)
+
+        env.add_agents(handles[0], method="custom_infection", pos=population_pos, infected=infected_ids)
+
+        env.add_agents(handles[1], method="custom", pos=health_officials_pos)
+
 
     else:
         env.add_agents(handles[0], method="random", n=map_size*map_size*0.1)

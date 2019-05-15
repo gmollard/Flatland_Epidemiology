@@ -32,6 +32,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.collide_penalty = config['collide_penalty']
         self.final_reward_times_healthy = config["final_reward_times_healthy"]
         self.infection_prob = config['infection_prob']
+        self.initially_infected = config['initially_infected']
         self.env = magent.GridWorld("agent_goal", map_size=self.map_size,
                                     vaccine_reward=self.vaccine_reward, view_radius=self.view_radius,
                                     step_reward=self.step_reward, infection_prob=self.infection_prob)
@@ -45,15 +46,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
 
         # self.handles = config["handles"]
         self.agent_generator = config["agent_generator"]
-        self.num_static_blocks = 1
-        if "num_static_blocks" in config.keys():
-            self.num_static_blocks = config["num_static_blocks"]
         # self.observation_space = gym.spaces.Tuple((gym.spaces.Space((31,31,6)), gym.spaces.Space((21,))))
         self.observation_mode = "dist_map"#config["view_mode"]
-
-        self.horizon = False
-        #if "horizon" in config.keys():
-        #    self.horizon = config["horizon"]
 
 
 
@@ -65,10 +59,9 @@ class GridWorldRLLibEnv(MultiAgentEnv):
             obs (dict): New observations for each ready agent.
         """
         self.env.reset()
-        generate_map(self.env, self.map_size, self.handles, self.agent_generator, self.n_agents)
-        print("GET_OBSERVATIONS")
+        generate_map(self.env, self.map_size, self.handles, self.agent_generator, self.n_agents,
+                     n_infected_init=self.initially_infected)
         observations = self.env.get_observation(self.handles[1], self.observation_mode)
-        print('GOT_IT')
         # assert(self.n_agents == self.env.get_num(self.handles[1]))
         self.agents = [f'agent_{i}' for i in range(self.env.get_num(self.handles[1]))]
         obs = {}
@@ -76,7 +69,6 @@ class GridWorldRLLibEnv(MultiAgentEnv):
             obs[agent_name] = [observations[0][i], observations[1][i]]#, observations[1][i]]
 
         if self.render:
-            print("RENDER")
             self.env.render()
 
         self.total_reward = 0
@@ -144,7 +136,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         for i, agent_name in enumerate(self.agents):
             obs[agent_name] = [observations[0][i], observations[1][i]]
             obs[agent_name][1][-1] = self.total_reward
-            rewards[agent_name] = rew[i]# / self.num_static_blocks
+            rewards[agent_name] = rew[i]
             dones[agent_name] = False
             infos[agent_name] = None
         # clear dead agents
@@ -153,10 +145,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         if self.render:
             self.env.render()
 
-        #if self.horizon:
-        #    if self.step_count == self.horizon:
-        #        dones['__all__'] = True
-        #    self.step_count += 1
+
 
         # if self.count_step == 50:
         #     for j in range(7):

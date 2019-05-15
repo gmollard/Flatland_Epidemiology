@@ -9,8 +9,8 @@ from ray.tune.logger import UnifiedLogger
 
 import ray.rllib.agents.ppo.ppo as ppo
 import ray.rllib.agents.dqn.dqn as dqn
-from ray.rllib.agents.ppo.ppo import PPOAgent
-from ray.rllib.agents.dqn.dqn import DQNAgent
+from ray.rllib.agents.ppo.ppo import PPOTrainer
+from ray.rllib.agents.dqn.dqn import DQNTrainer
 from ray.rllib.agents.ppo.ppo_policy_graph import PPOPolicyGraph
 from ray.rllib.agents.dqn.dqn_policy_graph import DQNPolicyGraph
 from ray.rllib.models import ModelCatalog
@@ -44,8 +44,7 @@ def train_func(config, reporter):
 
     # init the game
     print('Init Env')
-    env_name = f"gridworld_infection_prob{str(config['infection_prob']).replace('.','')}_n_agents_{config['n_agents']}"
-    policy_name = f"ppo_policy_infection_prob{str(config['infection_prob']).replace('.','')}_n_agents_{config['n_agents']}"
+    policy_name = config['policy_name'].format(**locals())
 
     # Specifying observation space and actions space dimensions.
     view_radius = config["view_radius"]*2 + 1
@@ -82,13 +81,13 @@ def train_func(config, reporter):
                   "bad_vaccine_penalty": -0.1,
                   "collide_penalty": -0.1,
                   "horizon": config["horizon"],
-                  "infection_prob": config["infection_prob"]
+                  "infection_prob": config["infection_prob"],
+                  "initially_infected": config["initially_infected"]
                   }
-
-    register_env(env_name, lambda _: GridWorldRLLibEnv(env_config))
 
     # PPO Config specification
     agent_config = ppo.DEFAULT_CONFIG.copy()
+    agent_config['env_config'] = env_config
     # Here we use the default fcnet with modified hidden layers size
     #print('DEFAULT_PREPROCESSOR:', agent_config['preprocessor_pref'])
     agent_config['model'] = {"fcnet_hiddens": config['hidden_sizes'], "custom_preprocessor": "my_prep"}
@@ -117,14 +116,14 @@ def train_func(config, reporter):
         """Creates a Unified logger with a default logdir prefix
         containing the agent name and the env id
         """
-        logdir = f"ppo_policy_infection_prob_{str(config['infection_prob']).replace('.', '')}_n_agents_{config['n_agents']}"
+        logdir = policy_name
         logdir = tempfile.mkdtemp(
             prefix=logdir, dir=config['local_dir'])
         return UnifiedLogger(conf, logdir, None)
 
     logger = logger_creator
 
-    ppo_trainer = PPOAgent(env=env_name, config=agent_config, logger_creator=logger)
+    ppo_trainer = PPOTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
 
     # ppo_trainer.restore('/mount/SDC/toric_env_grid_searches/simple_optimizer_constant_final_reward/ppo_policy_step_reward-001_final_reward_1eamh2814/checkpoint_1001/checkpoint-1001')
 
@@ -144,7 +143,8 @@ def train_func(config, reporter):
 @gin.configurable
 def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_size, vaccine_reward,
                 vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
-                    final_reward_times_healthy, entropy_coeff, local_dir, learning_rate, infection_prob, horizon):
+                    final_reward_times_healthy, entropy_coeff, local_dir, learning_rate, infection_prob,
+                    policy_name, initially_infected, horizon):
 
     tune.run(
         train_func,
@@ -164,8 +164,10 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "entropy_coeff": entropy_coeff,
                 "local_dir": local_dir,
                 "horizon": horizon,
-		"learning_rate": learning_rate,
-                "infection_prob": infection_prob
+                "learning_rate": learning_rate,
+                "infection_prob": infection_prob,
+                "policy_name": policy_name,
+                "initially_infected": initially_infected
                 },
         resources_per_trial={
             "cpu": 11,
