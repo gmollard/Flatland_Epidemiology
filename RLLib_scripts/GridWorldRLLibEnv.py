@@ -5,7 +5,7 @@ from __future__ import print_function
 from ray.rllib.utils.annotations import PublicAPI
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 
-from examples.agent_goal import generate_map
+from env_generator.agent_goal import generate_map
 
 import magent
 import numpy as np
