@@ -69,7 +69,7 @@ def train_func(config, reporter):
 
     # Environment configuration
     env_config = {"map_size": config['map_size'],
-                  "agent_generator": 'toric_env',
+                  "agent_generator": 'large_toric_env',
                   "render": False,
                   "num_static_blocks": 1,
                   "n_agents": config["n_agents"],
@@ -94,7 +94,7 @@ def train_func(config, reporter):
     #agent_config['model'] = {"custom_model": "conv_model", "custom_preprocessor": "my_prep"}
 
     agent_config["num_workers"] = 0
-    agent_config["num_cpus_per_worker"] = 10
+    agent_config["num_cpus_per_worker"] = 15
     agent_config["num_gpus"] = 0.5
     agent_config["num_gpus_per_worker"] = 0.5
     agent_config["num_cpus_for_driver"] = 1
@@ -170,8 +170,8 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "initially_infected": initially_infected
                 },
         resources_per_trial={
-            "cpu": 11,
-            "gpu": 0.5
+            "cpu": 16,
+            "gpu": 0.6
         },
         local_dir=local_dir
     )
@@ -181,7 +181,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/home/guillaume/sdd/toric_env_grid_searches/infection_prob_n_agents/'
+    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/large_toric_env_n_infected'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
