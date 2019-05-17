@@ -6,6 +6,7 @@ import gym
 import tempfile
 import ray
 from ray.tune.logger import UnifiedLogger
+import pickle
 
 import ray.rllib.agents.ppo.ppo as ppo
 import ray.rllib.agents.dqn.dqn as dqn
@@ -54,14 +55,16 @@ def train_func(config, reporter):
 
     policy_graphs = {}
     # Dict with the different policies to train
-    policy_graphs[policy_name] = (PPOPolicyGraph, obs_space, act_space, {})
+    policy_graphs['ppo_policy_infection_prob_003'] = (PPOPolicyGraph, obs_space, act_space, {})
+	#policy_graphs[policy_name] = (PPOPolicyGraph, obs_space, act_space, {})
     # else:
     #     for i in range(config['n_agents']):
     #         policy_graphs[f"ppo_policy_agent_{i}_independent_training_{config['independent_training']}"]\
     #             = (PPOPolicyGraph, obs_space, act_space, {})
 
     def policy_mapping_fn(agent_id):
-        return policy_name
+        return "ppo_policy_infection_prob_003"
+#	return policy_name
         # if config['independent_training'] == "common_trainer_common_policy":
         #     return f"ppo_policy_agent_0_vaccine_reward{str(config['vaccine_reward']).replace('.', '')}"
         # else:
@@ -95,8 +98,8 @@ def train_func(config, reporter):
 
     agent_config["num_workers"] = 0
     agent_config["num_cpus_per_worker"] = 15
-    agent_config["num_gpus"] = 0.5
-    agent_config["num_gpus_per_worker"] = 0.5
+    agent_config["num_gpus"] = 1
+    agent_config["num_gpus_per_worker"] = 1
     agent_config["num_cpus_for_driver"] = 1
     agent_config["num_envs_per_worker"] = 10
     agent_config["batch_mode"] = "complete_episodes"
@@ -125,7 +128,13 @@ def train_func(config, reporter):
 
     ppo_trainer = PPOTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
 
-    # ppo_trainer.restore('/mount/SDC/toric_env_grid_searches/simple_optimizer_constant_final_reward/ppo_policy_step_reward-001_final_reward_1eamh2814/checkpoint_1001/checkpoint-1001')
+    #ppo_trainer.restore('/home/guillaume/sdd/toric_env_grid_searches/infection_prob_grid_search/ppo_policy_infection_prob_003ypak0lyr/checkpoint_5001/checkpoint-5001')
+    #checkpoint_path='/home/guillaume/sdd/toric_env_grid_searches/infection_prob_grid_search/ppo_policy_infection_prob_003ypak0lyr/checkpoint_5001/checkpoint-5001'
+    #state = pickle.load(open(checkpoint_path, "rb"))
+    #ppo_trainer.local_evaluator.restore(state["evaluator"])
+    #remote_state = ray.put(state["evaluator"])
+    #for r in ppo_trainer.remote_evaluators:
+    #    r.restore.remote(remote_state)
 
     for i in range(100000 + 2):
         print("== Iteration", i, "==")
@@ -171,7 +180,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 },
         resources_per_trial={
             "cpu": 16,
-            "gpu": 0.6
+            "gpu": 1
         },
         local_dir=local_dir
     )
@@ -181,7 +190,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/large_toric_env_n_infected'
+    dir = '/home/guillaume/sdd/toric_env_grid_searches/large_toric_env_infection_prob'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
