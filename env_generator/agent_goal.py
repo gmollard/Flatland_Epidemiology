@@ -299,10 +299,16 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
                 population_pos.append((i, j))
 
         health_officials_pos = []
-        for i in range(1, map_size, 8):
-            for j in range(0, map_size - 1, 8):
+        for i in range(9, map_size, 16):
+            for j in range(5, map_size - 1, 8):
                 health_officials_pos.append((i, j))
-
+	
+        for i in range(5, map_size, 8):
+            for j in range(9, map_size - 1, 16):
+            	health_officials_pos.append((i, j))
+	
+        #print('POP POS', population_pos)
+        #print('HEALTH POS', health_officials_pos)
         infected_ids = np.random.choice(range(len(population_pos)), n_infected_init, replace=False)
 
         env.add_agents(handles[0], method="custom_infection", pos=population_pos, infected=infected_ids)
