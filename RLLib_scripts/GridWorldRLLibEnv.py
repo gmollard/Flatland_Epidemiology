@@ -117,7 +117,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         if dones['__all__']:
             if self.final_reward_times_healthy:
                 rew += self.final_reward*(self.env.get_num(self.handles[0]) -
-                        (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0]))) / len(rew)
+                        (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0])))
             else:
                 rew += self.final_reward
 
@@ -128,9 +128,10 @@ class GridWorldRLLibEnv(MultiAgentEnv):
                 #     for j in range(4):
                 #         cv2.imwrite(f'obs_{j}_{i}.png', observations[0][0][:,:,i]*255.0)
 
-            print(self.num_infected)
-            print(self.total_reward + 10*(self.env.get_num(self.handles[0]) -
-                        (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0]))))
+            print('Infected:', self.num_infected)
+            print('Immunized:', self.env.get_num_immunized(self.handles[0]))
+            #print(self.total_reward + 10*(self.env.get_num(self.handles[0]) -
+            #            (self.env.get_num_immunized(self.handles[0]) + self.env.get_num_infected(self.handles[0]))))
 
         infos = {}
         for i, agent_name in enumerate(self.agents):

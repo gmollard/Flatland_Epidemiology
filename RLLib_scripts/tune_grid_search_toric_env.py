@@ -128,7 +128,7 @@ def train_func(config, reporter):
 
     ppo_trainer = PPOTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
 
-    ppo_trainer.restore('/home/guillaume/sdd/toric_env_grid_searches/infection_prob_grid_search/ppo_policy_infection_prob_003ypak0lyr/checkpoint_5001/checkpoint-5001')
+    #ppo_trainer.restore('/home/guillaume/sdd/toric_env_grid_searches/infection_prob_grid_search/ppo_policy_infection_prob_003ypak0lyr/checkpoint_5001/checkpoint-5001')
     #checkpoint_path='/home/guillaume/sdd/toric_env_grid_searches/infection_prob_grid_search/ppo_policy_infection_prob_003ypak0lyr/checkpoint_5001/checkpoint-5001'
     #state = pickle.load(open(checkpoint_path, "rb"))
     #ppo_trainer.local_evaluator.restore(state["evaluator"])
@@ -190,7 +190,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/home/guillaume/sdd/toric_env_grid_searches/large_toric_env_infection_prob'
+    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/large_toric_env_negative_vaccine_reward'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
