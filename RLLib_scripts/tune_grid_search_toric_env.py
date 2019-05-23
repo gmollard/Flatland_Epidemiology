@@ -45,7 +45,7 @@ def train_func(config, reporter):
 
     # init the game
     print('Init Env')
-    policy_name = config['policy_name'].format(**locals())
+    policy_name = config['policy_name'].format(**locals()).replace('.', '')
 
     # Specifying observation space and actions space dimensions.
     view_radius = config["view_radius"]*2 + 1
@@ -55,16 +55,16 @@ def train_func(config, reporter):
 
     policy_graphs = {}
     # Dict with the different policies to train
-    policy_graphs['ppo_policy_infection_prob_003'] = (PPOPolicyGraph, obs_space, act_space, {})
-	#policy_graphs[policy_name] = (PPOPolicyGraph, obs_space, act_space, {})
+    # policy_graphs['ppo_policy_infection_prob_003'] = (PPOPolicyGraph, obs_space, act_space, {})
+    policy_graphs[policy_name] = (PPOPolicyGraph, obs_space, act_space, {})
     # else:
     #     for i in range(config['n_agents']):
     #         policy_graphs[f"ppo_policy_agent_{i}_independent_training_{config['independent_training']}"]\
     #             = (PPOPolicyGraph, obs_space, act_space, {})
 
     def policy_mapping_fn(agent_id):
-        return "ppo_policy_infection_prob_003"
-#	return policy_name
+        return policy_name
+        # return "ppo_policy_infection_prob_003"
         # if config['independent_training'] == "common_trainer_common_policy":
         #     return f"ppo_policy_agent_0_vaccine_reward{str(config['vaccine_reward']).replace('.', '')}"
         # else:
@@ -85,7 +85,8 @@ def train_func(config, reporter):
                   "collide_penalty": -0.1,
                   "horizon": config["horizon"],
                   "infection_prob": config["infection_prob"],
-                  "initially_infected": config["initially_infected"]
+                  "initially_infected": config["initially_infected"],
+                  "decreasing_vaccine_reward": config['decreasing_vaccine_reward']
                   }
 
     # PPO Config specification
@@ -153,7 +154,7 @@ def train_func(config, reporter):
 def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_size, vaccine_reward,
                 vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
                     final_reward_times_healthy, entropy_coeff, local_dir, learning_rate, infection_prob,
-                    policy_name, initially_infected, horizon):
+                    policy_name, initially_infected, decreasing_vaccine_reward, horizon):
 
     tune.run(
         train_func,
@@ -176,7 +177,8 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "learning_rate": learning_rate,
                 "infection_prob": infection_prob,
                 "policy_name": policy_name,
-                "initially_infected": initially_infected
+                "initially_infected": initially_infected,
+                "decreasing_vaccine_reward": decreasing_vaccine_reward
                 },
         resources_per_trial={
             "cpu": 16,

@@ -44,7 +44,7 @@ def train_func(config):
 
     # init the game
     print('Init Env')
-    policy_name = config['policy_name'].format(**locals()).replace('.','')
+    policy_name = config['policy_name'].format(**locals())#.replace('.','')
 
     # Specifying observation space and actions space dimensions.
     view_radius = config["view_radius"]*2 + 1
@@ -55,6 +55,7 @@ def train_func(config):
     policy_graphs = {}
     # Dict with the different policies to train
     policy_graphs[policy_name] = (PPOPolicyGraph, obs_space, act_space, {})
+    # policy_graphs["ppo_policy_infection_prob_003"] = (PPOPolicyGraph, obs_space, act_space, {})
 
     def policy_mapping_fn(agent_id):
         return policy_name
@@ -74,7 +75,8 @@ def train_func(config):
                   "collide_penalty": -0.1,
                   "horizon": config["horizon"],
                   "infection_prob": config["infection_prob"],
-                  "initially_infected": config["initially_infected"]
+                  "initially_infected": config["initially_infected"],
+                  "decreasing_vaccine_reward": config["decreasing_vaccine_reward"]
                   }
 
     # PPO Config specification
@@ -115,7 +117,7 @@ def train_func(config):
 
     ppo_trainer = PPOTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
 
-    ppo_trainer.restore('/home/guillaume/Desktop/distMAgent/infection_prob_grid_search/ppo_policy_infection_prob_003ypak0lyr/checkpoint_5001/checkpoint-5001')
+    ppo_trainer.restore('/home/guillaume/Desktop/distMAgent/large_toric_env_negative_vaccine_reward/ppo_policy_vaccine_reward_0.01_times_healthy_Truej1lg3swm/checkpoint_6201/checkpoint-6201')
 
     for i in range(100000 + 2):
         print("== Iteration", i, "==")
@@ -133,7 +135,7 @@ def train_func(config):
 def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_size, vaccine_reward,
                 vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
                     final_reward_times_healthy, entropy_coeff, local_dir, learning_rate, policy_name, infection_prob,
-                    initially_infected, horizon=False):
+                    initially_infected, decreasing_vaccine_reward, horizon=False):
 
     # tune.run(
     #     train_func,
@@ -169,13 +171,14 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
               "vf_share_layers": vf_share_layers,
               "step_reward": step_reward,
               "final_reward": final_reward,
-              "final_reward_times_healthy": final_reward_times_healthy,
-              "entropy_coeff": 1e-2,#entropy_coeff,
+              "final_reward_times_healthy": True, #final_reward_times_healthy,
+              "entropy_coeff": 0,#entropy_coeff,
               "local_dir": local_dir,
-              "horizon": 100,
+              "horizon": horizon,
               "policy_name": policy_name,
-              "infection_prob": 0.03,
-              "initially_infected": initially_infected
+              "infection_prob": infection_prob,
+              "initially_infected": initially_infected,
+              "decreasing_vaccine_reward": decreasing_vaccine_reward
                           }
     train_func(config)
 
@@ -184,7 +187,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/home/guillaume/Desktop/distMAgent/infection_prob_grid_search'
+    dir = '/home/guillaume/Desktop/distMAgent/large_toric_env_negative_vaccine_reward'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 

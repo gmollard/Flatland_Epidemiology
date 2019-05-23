@@ -48,6 +48,9 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.agent_generator = config["agent_generator"]
         # self.observation_space = gym.spaces.Tuple((gym.spaces.Space((31,31,6)), gym.spaces.Space((21,))))
         self.observation_mode = "dist_map"#config["view_mode"]
+        self.decreasing_vaccine_reward = config["decreasing_vaccine_reward"]
+
+        self.n_reset = 0
 
 
 
@@ -74,6 +77,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.total_reward = 0
         self.num_infected = 1
         self.step_count = 0
+        if self.n_reset < 10000:
+            self.n_reset += 1
 
         # self.count_step = 0
         for j in range(4):
@@ -114,6 +119,11 @@ class GridWorldRLLibEnv(MultiAgentEnv):
             self.num_infected = self.env.get_num_infected(self.handles[0])[0]
 
         self.total_reward += sum(rew)
+
+        for i in range(len(rew)):
+            if rew[i] > self.step_reward:
+                rew[i] -= 2*self.vaccine_reward*(self.n_reset / 10000)
+
         if dones['__all__']:
             if self.final_reward_times_healthy:
                 rew += self.final_reward*(self.env.get_num(self.handles[0]) -
