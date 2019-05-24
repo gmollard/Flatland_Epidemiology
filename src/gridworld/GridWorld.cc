@@ -39,6 +39,7 @@ GridWorld::GridWorld() {
     uniform_distribution = std::uniform_real_distribution<>(0,1);
 
     is_contained_epidemy = false;
+    first_step = true;
 }
 
 GridWorld::~GridWorld() {
@@ -567,6 +568,37 @@ void GridWorld::step(int *done) {
     size_t vaccine_size = vaccine_buffer.size();
     size_t group_size  = groups.size();
 
+    if (first_step) {
+        first_step = false;
+        Group group = groups[0];
+        for (auto ag : group.get_agents()) {
+            std::vector<Agent*> close_agents;
+            Position ag_pos = ag->get_pos();
+            for (auto ag2 : group.get_agents()) {
+                if (ag != ag2) {
+                    Position ag2_pos = ag2->get_pos();
+                    float radius = ag->get_type().infection_radius;
+                    double hor_dist_1 = std::min(pow(ag2_pos.x - ag_pos.x, 2),\
+                                                    pow(width - 1 - ag2_pos.x + ag_pos.x, 2));
+
+                    float hor_dist = std::min(hor_dist_1, pow(width - 1 - ag_pos.x + ag2_pos.x, 2));
+
+                    double ver_dist = std::min(pow(ag2_pos.y - ag_pos.y,2),\
+                                                    pow(height - 1 - ag2_pos.y + ag_pos.y, 2));
+
+                    ver_dist = std::min(ver_dist, pow(height - 1 - ag_pos.y + ag2_pos.y, 2));
+
+                    float dist = sqrt(hor_dist + ver_dist);
+
+                    if (dist <= radius) {
+                        close_agents.push_back(ag2);
+                    }
+                }
+            }
+            agents_in_infection_area.push_back(close_agents);
+        }
+    }
+
 
 
     // shuffle vaccines
@@ -623,46 +655,25 @@ void GridWorld::step(int *done) {
 
     is_contained_epidemy = true;
 
-    if (infection_mode) {
-        for (auto &group : groups) {
-            if (get_num_infected(0) != 0.0) {
-                std::vector<Position> infected_positions;
-                for (auto infected_agent: group.get_agents()) {
-                    if (infected_agent->is_infected()) {
-                        Position pos_infected = infected_agent->get_pos();
-                        infected_positions.push_back(pos_infected);
-                    }
-                }
-                for (auto pos_infected : infected_positions) {
-                    for (auto healthy_agent: group.get_agents()) {
-                        if (!healthy_agent->is_infected() and !healthy_agent->is_immunized()) {
-                            Position pos_healthy = healthy_agent->get_pos();
+    Group group = groups[0];
+    std::vector<Agent*> population_agents = group.get_agents();
 
-                            float radius = healthy_agent->get_type().infection_radius;
-                            double hor_dist_1 = std::min(pow(pos_healthy.x - pos_infected.x, 2),\
-                                                pow(width - 1 - pos_healthy.x + pos_infected.x, 2));
-                            float hor_dist = std::min(hor_dist_1, pow(width - 1 - pos_infected.x + pos_healthy.x, 2));
-
-                            double ver_dist = std::min(pow(pos_healthy.y - pos_infected.y,2),\
-                                                pow(height - 1 - pos_healthy.y + pos_infected.y, 2));
-                            ver_dist = std::min(ver_dist, pow(height - 1 - pos_infected.y + pos_healthy.y, 2));
-
-                            float dist = sqrt(hor_dist + ver_dist);
-
-                            float r = uniform_distribution(random_generator);
-                            if (dist <= radius)   {
-                                is_contained_epidemy = false;
-                                if (r < (healthy_agent->get_type().infection_probability)) {
-                                    healthy_agent->infect();
-                                    infected_agents_list.push_back(healthy_agent);
-                                }
-                            }
-                        }
+    for(int i = 0; i < population_agents.size(); ++i) {
+        if (population_agents[i]->is_infected()) {
+            std::vector<Agent*> close_agents = agents_in_infection_area[i];
+            for (auto ag : close_agents) {
+                if (!ag->is_infected() and !ag->is_immunized()) {
+                    is_contained_epidemy = false;
+                    float r = uniform_distribution(random_generator);
+                    if (r < (ag->get_type().infection_probability)) {
+                        ag->infect();
+                        infected_agents_list.push_back(ag);
                     }
                 }
             }
         }
     }
+
 
 //    compute_dist_infected_map();
 

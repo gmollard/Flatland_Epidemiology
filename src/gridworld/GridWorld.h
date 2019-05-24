@@ -149,6 +149,10 @@ private:
     std::vector<Agent*> infected_agents_list;
 
     void compute_dist_infected_map();
+
+    std::vector<std::vector<Agent*>> agents_in_infection_area;
+
+    bool first_step;
 };
 
 
