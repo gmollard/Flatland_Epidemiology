@@ -131,6 +131,9 @@ void GridWorld::reset() {
         init_reward_description();
         reward_des_initialized = true;
     }
+
+    first_step = true;
+    agents_in_infection_area = std::vector<std::vector<Agent*>>();
 }
 
 void GridWorld::set_config(const char *key, void *p_value) {
@@ -601,11 +604,11 @@ void GridWorld::step(int *done) {
 
 
 
-    // shuffle vaccines
-    for (int i = 0; i < vaccine_size; i++) {
-        int j = (int)random_engine() % (i+1);
-        std::swap(vaccine_buffer[i], vaccine_buffer[j]);
-    }
+//    // shuffle vaccines
+//    for (int i = 0; i < vaccine_size; i++) {
+//        int j = (int)random_engine() % (i+1);
+//        std::swap(vaccine_buffer[i], vaccine_buffer[j]);
+//    }
 
     LOG(TRACE) << "vaccine.  ";
 //    std::vector<RenderAttackEvent> render_attack_buffer;

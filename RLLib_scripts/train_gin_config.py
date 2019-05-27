@@ -9,9 +9,11 @@ from ray.tune.logger import UnifiedLogger
 
 import ray.rllib.agents.ppo.ppo as ppo
 import ray.rllib.agents.dqn.dqn as dqn
-from ray.rllib.agents.ppo.ppo import PPOTrainer
+# from ray.rllib.agents.ppo.ppo import PPOTrainer
+from RLLib_scripts.ppo import PPOTrainer
 from ray.rllib.agents.dqn.dqn import DQNTrainer
-from ray.rllib.agents.ppo.ppo_policy_graph import PPOPolicyGraph
+from RLLib_scripts.ppo_policy_graph_centralized_2 import PPOPolicyGraph
+# from ray.rllib.agents.ppo.ppo_policy_graph import PPOPolicyGraph
 from ray.rllib.agents.dqn.dqn_policy_graph import DQNPolicyGraph
 from ray.rllib.models import ModelCatalog
 
@@ -62,8 +64,8 @@ def train_func(config):
 
     # Environment configuration
     env_config = {"map_size": config['map_size'],
-                  "agent_generator": 'toric_env',
-                  "render": True,
+                  "agent_generator": 'large_toric_env',
+                  "render": False,
                   "num_static_blocks": 1,
                   "n_agents": config["n_agents"],
                   "vaccine_reward": config["vaccine_reward"],
@@ -97,6 +99,8 @@ def train_func(config):
     agent_config["vf_share_layers"] = config['vf_share_layers']
     agent_config["simple_optimizer"] = False
     agent_config["entropy_coeff"] = config["entropy_coeff"]
+    agent_config['use_centralized_vf'] = True
+    agent_config['max_vf_agents'] = 20
     # agent_config["n_step"] = 3
 
     agent_config['multiagent'] = {"policy_graphs": policy_graphs,
@@ -117,7 +121,7 @@ def train_func(config):
 
     ppo_trainer = PPOTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
 
-    ppo_trainer.restore('/home/guillaume/Desktop/distMAgent/large_toric_env_negative_vaccine_reward/ppo_policy_vaccine_reward_0.01_times_healthy_Truej1lg3swm/checkpoint_6201/checkpoint-6201')
+    # ppo_trainer.restore('/home/guillaume/Desktop/distMAgent/large_toric_env_negative_vaccine_reward/ppo_policy_vaccine_reward_0.01_times_healthy_Truej1lg3swm/checkpoint_6201/checkpoint-6201')
 
     for i in range(100000 + 2):
         print("== Iteration", i, "==")
@@ -172,7 +176,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
               "step_reward": step_reward,
               "final_reward": final_reward,
               "final_reward_times_healthy": True, #final_reward_times_healthy,
-              "entropy_coeff": 0,#entropy_coeff,
+              "entropy_coeff": 1e-2,#entropy_coeff,
               "local_dir": local_dir,
               "horizon": horizon,
               "policy_name": policy_name,
