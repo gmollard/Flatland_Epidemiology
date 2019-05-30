@@ -70,6 +70,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         obs = {}
         for i, agent_name in enumerate(self.agents):
             obs[agent_name] = [observations[0][i], observations[1][i]]#, observations[1][i]]
+            obs[agent_name][1] = np.append(obs[agent_name][1], [1,0])
 
         if self.render:
             self.env.render()
@@ -83,7 +84,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         # self.count_step = 0
         for j in range(4):
             cv2.imwrite(f'obs_{j}.png', obs['agent_0'][0][:, :, j] * 255.0)
-
+        
         return obs
 
     @PublicAPI
@@ -122,7 +123,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
 
         for i in range(len(rew)):
             if rew[i] > self.step_reward:
-                rew[i] -= 2*self.vaccine_reward*(self.n_reset / 10000)
+                rew[i] -= 2*self.vaccine_reward*(self.n_reset / 5000)
 
         if dones['__all__']:
             if self.final_reward_times_healthy:
@@ -147,6 +148,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         for i, agent_name in enumerate(self.agents):
             obs[agent_name] = [observations[0][i], observations[1][i]]
             obs[agent_name][1][-1] = self.total_reward
+            obs[agent_name][1] = np.append(obs[agent_name][1], self.num_infected)
+            obs[agent_name][1] = np.append(obs[agent_name][1], self.env.get_num_immunized(self.handles[0]))
             rewards[agent_name] = rew[i]
             dones[agent_name] = False
             infos[agent_name] = None
