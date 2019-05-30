@@ -32,7 +32,7 @@ import numpy as np
 
 class MyPreprocessorClass(Preprocessor):
     def _init_shape(self, obs_space, options):
-        return (4*17**2 + 23,)
+        return (4*obs_space[0].shape[0]**2 + 23,)
 
     def transform(self, observation):
         #print(np.concatenate([observation[0].flatten(), observation[1]]).shape)
@@ -100,16 +100,17 @@ def train_func(config, reporter):
     #agent_config['model'] = {"custom_model": "conv_model", "custom_preprocessor": "my_prep"}
 
     agent_config["num_workers"] = 0
-    agent_config["num_cpus_per_worker"] = 17
-    agent_config["num_gpus"] = 0.0
-    agent_config["num_gpus_per_worker"] = 0.0
+    agent_config["num_cpus_per_worker"] = 7
+    agent_config["num_gpus"] = 0.5
+    agent_config["num_gpus_per_worker"] = 0.5
     agent_config["num_cpus_for_driver"] = 1
-    agent_config["num_envs_per_worker"] = 1
+    agent_config["num_envs_per_worker"] = 5
     agent_config["batch_mode"] = "complete_episodes"
     agent_config["vf_clip_param"] = config['vf_clip_param']
     agent_config["vf_share_layers"] = config['vf_share_layers']
     agent_config["simple_optimizer"] = False
     agent_config["entropy_coeff"] = config["entropy_coeff"]
+    agent_config["num_sgd_iter"] = config["num_sgd_iter"]
     agent_config['use_centralized_vf'] = config["use_centralized_vf"]
     agent_config['max_vf_agents'] = 12
     # agent_config["n_step"] = 3
@@ -158,7 +159,8 @@ def train_func(config, reporter):
 def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_size, vaccine_reward,
                 vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
                     final_reward_times_healthy, entropy_coeff, local_dir, learning_rate, infection_prob,
-                    policy_name, initially_infected, decreasing_vaccine_reward, horizon, use_centralized_vf):
+                    policy_name, initially_infected, decreasing_vaccine_reward, horizon, use_centralized_vf,
+		    num_sgd_iter):
 
     tune.run(
         train_func,
@@ -183,11 +185,12 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "policy_name": policy_name,
                 "initially_infected": initially_infected,
                 "decreasing_vaccine_reward": decreasing_vaccine_reward,
-                "use_centralized_vf": use_centralized_vf
+                "use_centralized_vf": use_centralized_vf,
+		"num_sgd_iter": num_sgd_iter
                 },
         resources_per_trial={
-            "cpu": 18,
-            "gpu": 0.0
+            "cpu": 8,
+            "gpu": 0.5
         },
         local_dir=local_dir
     )
@@ -197,7 +200,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/observation_space_grid_search'
+    dir = '/home/guillaume/sdd/toric_env_grid_searches/num_sgd_iter_grid_search'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
