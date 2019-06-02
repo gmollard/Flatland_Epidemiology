@@ -62,6 +62,8 @@ public:
                        int view_left_top_x, int view_left_top_y,
                        int view_right_bottom_x, int view_right_bottom_y) const;
 
+    void extract_global_view(float *linear_buffer, int n_channel) const;
+
     PositionInteger get_attack_obj(const AttackAction &attack, int &obj_x, int &obj_y) const;
     PositionInteger get_vaccine_obj(const VaccineAction &vaccine, int &obj_x, int &obj_y) const;
     Reward do_attack(Agent *agent, PositionInteger pos_int, GroupHandle &dead_group);

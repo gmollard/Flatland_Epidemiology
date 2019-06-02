@@ -249,6 +249,49 @@ void Map::extract_view_infection_mode(const Agent *agent, float *linear_buffer, 
 
 }
 
+void Map::extract_global_view(float *linear_buffer, int n_channel) const {
+
+    NDPointer<float, 3> buffer(linear_buffer, {h - 1, w - 1, n_channel});
+
+//    int *p_view_inner, *p_view_outer;
+//    int d_view_inner, d_view_outer;
+//
+//
+//    p_view_inner = &view_y; p_view_outer = &view_x;
+//    d_view_inner = 1; d_view_outer = 1;
+
+    for (int x = 0; x <= w - 1; x++) {
+        for (int y = 0; y <= h - 1; y++) {
+
+            PositionInteger pos_int = pos2int(x, y);
+            if (slots[pos_int].slot_type == OBSTACLE) { // Wall
+                std::cerr << y << "WALL " << x << std::endl;
+
+            } else if (slots[pos_int].occupier != nullptr && slots[pos_int].occ_type == OCC_AGENT) {
+                Agent *p = ((Agent *) slots[pos_int].occupier);
+
+                if (p->get_type().name == "tiger") {
+                    std::cerr << "AGENT DETECTED: " << y << " " << x << std::endl;
+                    buffer.at(y, x, 0) = 1;
+                } else {
+                    if (!p->is_infected() and !p->is_immunized()){
+                        buffer.at(y, x, 1) = 1;
+                    } else if (p->is_infected()) {
+                        buffer.at(y, x, 2) = 1;
+                    } else {
+                        buffer.at(y, x, 3) = 1;
+                    }
+                }
+            }
+//            *p_view_inner += d_view_inner;
+//            pos_int += MAP_INNER_Y_ADD;
+        }
+//        *p_view_inner = start_inner;
+//        *p_view_outer += d_view_outer;
+    }
+
+}
+
 
 
 void Map::extract_view(const Agent *agent, float *linear_buffer, const int *channel_trans, const Range *range,

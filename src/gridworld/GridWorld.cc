@@ -353,6 +353,11 @@ void GridWorld::add_agents(GroupHandle group, int n, const char *method,
 //    compute_dist_infected_map();
 }
 
+void GridWorld::get_global_observation(float *linear_buffer) const {
+    NDPointer<float, 3> view_buffer(linear_buffer, {{width, height, 4}});
+    map.extract_global_view(view_buffer.data, 4);
+}
+
 void GridWorld::get_observation(GroupHandle group, float **linear_buffers) {
     Group &g = groups[group];
     AgentType &type = g.get_type();
@@ -669,11 +674,17 @@ void GridWorld::step(int *done) {
                     is_contained_epidemy = false;
                     float r = uniform_distribution(random_generator);
                     if (r < (ag->get_type().infection_probability)) {
-                        ag->infect();
-                        infected_agents_list.push_back(ag);
+                        ag->being_infected = true;
                     }
                 }
             }
+        }
+    }
+
+    for(int i = 0; i < population_agents.size(); ++i) {
+        if (population_agents[i]->being_infected) {
+            population_agents[i]->infect();
+            infected_agents_list.push_back(population_agents[i]);
         }
     }
 

@@ -80,6 +80,8 @@ public:
     int get_num_immunized(GroupHandle group);
     bool epidemy_contained() const;
 
+    void get_global_observation(float *linear_buffer) const;
+
 
 private:
     // reward description
@@ -173,6 +175,7 @@ public:
         infected = false;
         immunized = false;
         vaccines_done = 0;
+        being_infected = false;
     }
 
     Position &get_pos()             { return pos; }
@@ -292,6 +295,8 @@ public:
     void set_dist_infected(float dist) {dist_infected = dist;}
 
     bool immunized;
+
+    bool being_infected;
 
 private:
     int id;

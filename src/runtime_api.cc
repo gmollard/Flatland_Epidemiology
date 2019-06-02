@@ -50,6 +50,13 @@ int env_get_observation(EnvHandle game, GroupHandle group, float **buffer) {
     return 0;
 }
 
+int gridworld_get_global_observation(EnvHandle game, float **buffer){
+    LOG(TRACE) << "env get global observation.  ";
+    ((::magent::gridworld::GridWorld *)game)->get_global_observation(buffer[0]);
+    return 0;
+
+}
+
 int env_set_action(EnvHandle game, GroupHandle group, const int *actions) {
     LOG(TRACE) << "env set action.  ";
     game->set_action(group, actions);
