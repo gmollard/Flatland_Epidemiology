@@ -2,7 +2,7 @@ from RLLib_scripts.GridWorldRLLibEnv import GridWorldRLLibEnv
 import numpy as np
 
 # Environment configuration
-env_config = {"map_size": 19,
+env_config = {"map_size": 15,
               "agent_generator": 'large_toric_env',
               "render": True,
               "num_static_blocks": 1,
@@ -37,16 +37,18 @@ def pprint(obs_array):
 
 obs = env.reset()
 action_dict = dict()
-for k in obs.keys():
-    action_dict[k] = 5
+for k in list(obs.keys()):
+    action_dict[k] = 2
 
-for i in range(5):
-    obs, _, _, _ = env.step(action_dict)
-    print('healthy agents')
-    pprint(obs['agent_0'][0][:, :, 1])
-    print('infected agents')
-    pprint(obs['agent_0'][0][:, :, 2])
-    print()
+
+for i in range(10):
+    pprint(env.get_global_observation()[:, :, 2])
+    obs, rew, _, _ = env.step(action_dict)
+    # print('healthy agents')
+    # pprint(obs['agent_0'][0][:, :, 1])
+    # print('infected agents')
+    # pprint(obs['agent_0'][0][:, :, 2])
+    # print()
 
 # print("reward:", env.step({"agent_0": 5})[1])
 # print("reward:", env.step({"agent_0": 4})[1])

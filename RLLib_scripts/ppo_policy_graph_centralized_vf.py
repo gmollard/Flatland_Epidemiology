@@ -152,6 +152,13 @@ class PPOPostprocessing(object):
                                sample_batch,
                                other_agent_batches=None,
                                episode=None):
+        # from pprint import pprint
+        # pprint(vars(episode))
+        # print(ds)
+        # from pprint import pprint
+        # pprint(vars(episode))
+        # print(ds)
+        # print(ds)
         completed = sample_batch["dones"][-1]
         if completed:
             last_r = 0.0
@@ -166,43 +173,45 @@ class PPOPostprocessing(object):
 
         # if needed, add a centralized value function to the sample batch
         if self.config["use_centralized_vf"]:
+            central_obs_batch = [episode.global_obs[t].flatten() for t in sample_batch['t']]
             # TODO(ev) do we need to sort this?
-            time_span = (sample_batch['t'][0], sample_batch['t'][-1])
-            other_agent_times = {
-                agent_id: (other_agent_batches[agent_id][1]["t"][0],
-                           other_agent_batches[agent_id][1]["t"][-1])
-                for agent_id in other_agent_batches.keys()
-            }
-            rel_agents = {
-                agent_id: other_agent_time
-                for agent_id, other_agent_time in other_agent_times.items()
-                if self.time_overlap(time_span, other_agent_time)
-            }
-            if len(rel_agents) > 0:
-                other_obs = {
-                    agent_id: other_agent_batches[agent_id][1]["obs"].copy()
-                    for agent_id in rel_agents.keys()
-                }
-                padded_agent_obs = {
-                    agent_id: self.overlap_and_pad_agent(
-                        time_span, rel_agent_time, other_obs[agent_id])
-                    for agent_id, rel_agent_time in rel_agents.items()
-                }
-                central_obs_batch = np.hstack(
-                    [padded_obs for padded_obs in padded_agent_obs.values()])
-                central_obs_batch = np.hstack((central_obs_batch,
-                                               sample_batch["obs"]))
-            else:
-                central_obs_batch = sample_batch["obs"]
-            max_vf_agents = self.config["max_vf_agents"]
-            num_agents = len(rel_agents) + 1
-            if num_agents < max_vf_agents:
-                diff = max_vf_agents - num_agents
-                zero_pad = np.zeros((central_obs_batch.shape[0],
-                                     self.observation_space.shape[0] * diff))
-                central_obs_batch = np.hstack((central_obs_batch, zero_pad))
-            elif num_agents > max_vf_agents:
-                print("Too many agents!")
+            # time_span = (sample_batch['t'][0], sample_batch['t'][-1])
+            # other_agent_times = {
+            #     agent_id: (other_agent_batches[agent_id][1]["t"][0],
+            #                other_agent_batches[agent_id][1]["t"][-1])
+            #     for agent_id in other_agent_batches.keys()
+            # }
+            # rel_agents = {
+            #     agent_id: other_agent_time
+            #     for agent_id, other_agent_time in other_agent_times.items()
+            #     if self.time_overlap(time_span, other_agent_time)
+            # }
+            # if len(rel_agents) > 0:
+            #     other_obs = {
+            #         agent_id: other_agent_batches[agent_id][1]["obs"].copy()
+            #         for agent_id in rel_agents.keys()
+            #     }
+            #     padded_agent_obs = {
+            #         agent_id: self.overlap_and_pad_agent(
+            #             time_span, rel_agent_time, other_obs[agent_id])
+            #         for agent_id, rel_agent_time in rel_agents.items()
+            #     }
+            #     central_obs_batch = np.hstack(
+            #         [padded_obs for padded_obs in padded_agent_obs.values()])
+            #     central_obs_batch = np.hstack((central_obs_batch,
+            #                                    sample_batch["obs"]))
+
+            # else:
+            #     central_obs_batch = sample_batch["obs"]
+            # max_vf_agents = self.config["max_vf_agents"]
+            # num_agents = len(rel_agents) + 1
+            # if num_agents < max_vf_agents:
+            #     diff = max_vf_agents - num_agents
+            #     zero_pad = np.zeros((central_obs_batch.shape[0],
+            #                          self.observation_space.shape[0] * diff))
+            #     central_obs_batch = np.hstack((central_obs_batch, zero_pad))
+            # elif num_agents > max_vf_agents:
+            #     print("Too many agents!")
             # add the central obs and central critic value
             sample_batch["central_obs"] = central_obs_batch
             sample_batch["central_vf_preds"] = self.sess.run(
@@ -322,6 +331,7 @@ class PPOPolicyGraph(LearningRateSchedule, PPOPostprocessing, TFPolicyGraph):
                 # import ipdb; ipdb.set_trace()
                 obs_shape = self.config["max_vf_agents"] * \
                             np.product(observation_space.shape)
+                obs_shape = np.product((28, 28, 4))
                 central_obs_ph = tf.placeholder(
                     tf.float32, name="central_obs", shape=(None, obs_shape))
                 central_vf_preds_ph = tf.placeholder(

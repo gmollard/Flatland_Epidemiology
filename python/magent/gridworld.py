@@ -52,6 +52,8 @@ class GridWorld(Environment):
             'embedding_size': int,
             'render_dir': str, 'infection_mode': bool
         }
+        self.map_width = config.config_dict['map_width']
+        self.map_height = config.config_dict['map_height']
 
         for key in config.config_dict:
             value_type = config_value_type[key]
@@ -315,6 +317,14 @@ class GridWorld(Environment):
             # view_buf = np.concatenate((view_buf, exposed), axis=3)
 
         return view_buf, feature_buf
+
+    def get_global_observation(self):
+        view_buf = np.zeros((self.map_width - 1, self.map_height - 1, 4), dtype=np.float32)
+        bufs = (ctypes.POINTER(ctypes.c_float) * 2)()
+        bufs[0] = as_float_c_array(view_buf)
+
+        _LIB.gridworld_get_global_observation(self.game, bufs)
+        return view_buf
 
     def set_action(self, handle, actions):
         """ set actions for whole group

@@ -107,7 +107,6 @@ def train_func(config):
                                 "policy_mapping_fn": policy_mapping_fn,
                                 "policies_to_train": list(policy_graphs.keys())}
 
-
     def logger_creator(conf):
         """Creates a Unified logger with a default logdir prefix
         containing the agent name and the env id
@@ -121,7 +120,8 @@ def train_func(config):
 
     ppo_trainer = PPOTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
 
-    # ppo_trainer.restore('/home/guillaume/Desktop/distMAgent/large_toric_env_negative_vaccine_reward/ppo_policy_vaccine_reward_0.01_times_healthy_Truej1lg3swm/checkpoint_6201/checkpoint-6201')
+    # ppo_trainer.restore('/home/guillaume/Desktop/distMAgent/large_toric_env_negative_vaccine_reward/
+    # ppo_policy_vaccine_reward_0.01_times_healthy_Truej1lg3swm/checkpoint_6201/checkpoint-6201')
 
     for i in range(100000 + 2):
         print("== Iteration", i, "==")

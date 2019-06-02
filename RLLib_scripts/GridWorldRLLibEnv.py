@@ -52,6 +52,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
 
         self.n_reset = 0
 
+        self.t = None
+
 
 
 
@@ -70,7 +72,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         obs = {}
         for i, agent_name in enumerate(self.agents):
             obs[agent_name] = [observations[0][i], observations[1][i]]#, observations[1][i]]
-            obs[agent_name][1] = np.append(obs[agent_name][1], [1,0])
+            obs[agent_name][1] = np.append(obs[agent_name][1], [1, 0])
 
         if self.render:
             self.env.render()
@@ -84,6 +86,12 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         # self.count_step = 0
         for j in range(4):
             cv2.imwrite(f'obs_{j}.png', obs['agent_0'][0][:, :, j] * 255.0)
+
+        self.t = 0
+
+        self.episode_id = -1
+
+        # obs['global_obs'] = self.env.get_global_observation()
         
         return obs
 
@@ -153,13 +161,14 @@ class GridWorldRLLibEnv(MultiAgentEnv):
             rewards[agent_name] = rew[i]
             dones[agent_name] = False
             infos[agent_name] = None
+
         # clear dead agents
         self.env.clear_dead()
 
         if self.render:
             self.env.render()
 
-
+        # obs['global_obs'] = self.env.get_global_observation()
 
         # if self.count_step == 50:
         #     for j in range(7):
@@ -168,6 +177,11 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         #
         # self.count_step += 1
 
+        self.t += 1
+
         return obs, rewards, dones, {}
+
+    def get_global_observation(self):
+        return self.env.get_global_observation()
 
 

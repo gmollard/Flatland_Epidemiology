@@ -40,8 +40,38 @@ class MyPreprocessorClass(Preprocessor):
         return np.concatenate([observation[0].flatten(), observation[1]])  # return the preprocessed observation
 
 ModelCatalog.register_custom_preprocessor("my_prep", MyPreprocessorClass)
-ray.init(object_store_memory=150000000000)
+ray.init()  #  (object_store_memory=150000000000)
 ModelCatalog.register_custom_model("conv_model", LightModel)
+
+
+def on_episode_start(info):
+    for env in info['env'].envs:
+        if env.episode_id == -1:
+            env.episode_id = info['episode'].episode_id
+            info['episode'].global_obs = []
+            return
+
+    assert(False)
+
+
+def on_episode_step(info):
+    find_ep = False
+    for env in info['env'].envs:
+        if env.episode_id == info['episode'].episode_id:
+            find_ep = True
+            info['episode'].global_obs.append(env.get_global_observation())
+
+    assert(find_ep)
+
+
+def on_episode_end(info):
+    find_ep = False
+    for env in info['env'].envs:
+        if env.episode_id == info['episode'].episode_id:
+            find_ep = True
+            info['episode'].global_obs.append(env.get_global_observation())
+    assert(find_ep)
+
 
 def train_func(config, reporter):
 
@@ -65,7 +95,7 @@ def train_func(config, reporter):
     #             = (PPOPolicyGraph, obs_space, act_space, {})
 
     def policy_mapping_fn(agent_id):
-        return policy_name#.replace(str(config['initially_infected']), '1')
+        return policy_name  # .replace(str(config['initially_infected']), '1')
         # return "ppo_policy_infection_prob_003"
         # if config['independent_training'] == "common_trainer_common_policy":
         #     return f"ppo_policy_agent_0_vaccine_reward{str(config['vaccine_reward']).replace('.', '')}"
@@ -100,11 +130,11 @@ def train_func(config, reporter):
     #agent_config['model'] = {"custom_model": "conv_model", "custom_preprocessor": "my_prep"}
 
     agent_config["num_workers"] = 0
-    agent_config["num_cpus_per_worker"] = 7
-    agent_config["num_gpus"] = 0.3
-    agent_config["num_gpus_per_worker"] = 0.3
+    agent_config["num_cpus_per_worker"] = 1
+    agent_config["num_gpus"] = 0.0
+    agent_config["num_gpus_per_worker"] = 0.0
     agent_config["num_cpus_for_driver"] = 1
-    agent_config["num_envs_per_worker"] = 5
+    agent_config["num_envs_per_worker"] = 2
     agent_config["batch_mode"] = "complete_episodes"
     agent_config["vf_clip_param"] = config['vf_clip_param']
     agent_config["vf_share_layers"] = config['vf_share_layers']
@@ -115,6 +145,14 @@ def train_func(config, reporter):
     agent_config['max_vf_agents'] = 12
     agent_config['sgd_minibatch_size'] = config['sgd_minibatch_size']
     agent_config['clip_param'] = config['clip_param']
+    agent_config['gamma'] = config['gamma']
+    if config['use_centralized_vf']:
+        agent_config['callbacks'] = {
+            "on_episode_start": tune.function(on_episode_start),
+            "on_episode_step": tune.function(on_episode_step),
+            "on_episode_end": tune.function(on_episode_end)}
+
+    agent_config['log_level'] = 'WARN'
     # agent_config["n_step"] = 3
 
     agent_config['multiagent'] = {"policy_graphs": policy_graphs,
@@ -159,10 +197,10 @@ def train_func(config, reporter):
 
 @gin.configurable
 def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_size, vaccine_reward,
-                vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
+                    vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
                     final_reward_times_healthy, entropy_coeff, local_dir, learning_rate, infection_prob,
                     policy_name, initially_infected, decreasing_vaccine_reward, horizon, use_centralized_vf,
-		    num_sgd_iter, sgd_minibatch_size, clip_param):
+                    num_sgd_iter, sgd_minibatch_size, clip_param, gamma):
 
     tune.run(
         train_func,
@@ -188,23 +226,22 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "initially_infected": initially_infected,
                 "decreasing_vaccine_reward": decreasing_vaccine_reward,
                 "use_centralized_vf": use_centralized_vf,
-		"num_sgd_iter": num_sgd_iter,
+                "num_sgd_iter": num_sgd_iter,
                 "sgd_minibatch_size": sgd_minibatch_size,
-                "clip_param": clip_param
+                "clip_param": clip_param,
+                "gamma": gamma
                 },
         resources_per_trial={
-            "cpu": 8,
-            "gpu": 0.3
+            "cpu": 2,
+            "gpu": 0.0
         },
         local_dir=local_dir
     )
 
 
-
-
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/clip_param_grid_search'
+    dir = '/home/guillaume/Desktop/Flatland_Epidemiology/toric_env_tests/test'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 

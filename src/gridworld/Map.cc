@@ -271,7 +271,7 @@ void Map::extract_global_view(float *linear_buffer, int n_channel) const {
                 Agent *p = ((Agent *) slots[pos_int].occupier);
 
                 if (p->get_type().name == "tiger") {
-                    std::cerr << "AGENT DETECTED: " << y << " " << x << std::endl;
+//                    std::cerr << "AGENT DETECTED: " << y << " " << x << std::endl;
                     buffer.at(y, x, 0) = 1;
                 } else {
                     if (!p->is_infected() and !p->is_immunized()){
