@@ -306,6 +306,7 @@ class PPOPolicyGraph(LearningRateSchedule, PPOPostprocessing, TFPolicyGraph):
         self.config = config
         self.kl_coeff_val = self.config["kl_coeff"]
         self.kl_target = self.config["kl_target"]
+        map_size = config['env_config']['map_size']
         dist_cls, logit_dim = ModelCatalog.get_action_dist(
             action_space, self.config["model"])
 
@@ -331,7 +332,7 @@ class PPOPolicyGraph(LearningRateSchedule, PPOPostprocessing, TFPolicyGraph):
                 # import ipdb; ipdb.set_trace()
                 obs_shape = self.config["max_vf_agents"] * \
                             np.product(observation_space.shape)
-                obs_shape = np.product((28, 28, 4))
+                obs_shape = np.product((map_size - 1, map_size - 1, 4))
                 central_obs_ph = tf.placeholder(
                     tf.float32, name="central_obs", shape=(None, obs_shape))
                 central_vf_preds_ph = tf.placeholder(
