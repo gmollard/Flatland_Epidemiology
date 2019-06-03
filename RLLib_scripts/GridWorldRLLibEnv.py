@@ -72,7 +72,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         obs = {}
         for i, agent_name in enumerate(self.agents):
             obs[agent_name] = [observations[0][i], observations[1][i]]#, observations[1][i]]
-            obs[agent_name][1] = np.append(obs[agent_name][1], [1, 0])
+            obs[agent_name][1] = np.append(obs[agent_name][1], [self.env.get_num_infected(self.handles[0])[0], 0])
 
         if self.render:
             self.env.render()

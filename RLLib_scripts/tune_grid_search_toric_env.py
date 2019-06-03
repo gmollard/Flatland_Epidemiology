@@ -40,7 +40,7 @@ class MyPreprocessorClass(Preprocessor):
         return np.concatenate([observation[0].flatten(), observation[1]])  # return the preprocessed observation
 
 ModelCatalog.register_custom_preprocessor("my_prep", MyPreprocessorClass)
-ray.init()  #  (object_store_memory=150000000000)
+ray.init(log_to_driver=False, object_store_memory=150000000000)
 ModelCatalog.register_custom_model("conv_model", LightModel)
 
 
@@ -130,11 +130,11 @@ def train_func(config, reporter):
     #agent_config['model'] = {"custom_model": "conv_model", "custom_preprocessor": "my_prep"}
 
     agent_config["num_workers"] = 0
-    agent_config["num_cpus_per_worker"] = 11
-    agent_config["num_gpus"] = 0.5
-    agent_config["num_gpus_per_worker"] = 0.5
+    agent_config["num_cpus_per_worker"] = 19
+    agent_config["num_gpus"] = 1.0
+    agent_config["num_gpus_per_worker"] = 1.0
     agent_config["num_cpus_for_driver"] = 1
-    agent_config["num_envs_per_worker"] = 8
+    agent_config["num_envs_per_worker"] = 2
     agent_config["batch_mode"] = "complete_episodes"
     agent_config["vf_clip_param"] = config['vf_clip_param']
     agent_config["vf_share_layers"] = config['vf_share_layers']
@@ -233,8 +233,8 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "gamma": gamma
                 },
         resources_per_trial={
-            "cpu": 12,
-            "gpu": 0.5
+            "cpu": 20,
+            "gpu": 1.0
         },
         local_dir=local_dir
     )
@@ -242,7 +242,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/home/guillaume/Flatland_Epidemiology/toric_env_tests/centralized_vf_global_obs'
+    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/map_size_centralized_vf_2_infected'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
