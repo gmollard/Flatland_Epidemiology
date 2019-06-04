@@ -233,8 +233,8 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "gamma": gamma
                 },
         resources_per_trial={
-            "cpu": 20,
-            "gpu": 1.0
+            "cpu": 12,
+            "gpu": 0.5
         },
         local_dir=local_dir
     )
@@ -242,7 +242,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/map_size_centralized_vf_2_infected'
+    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/map_size_2_infected_horizon_grid_search'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
