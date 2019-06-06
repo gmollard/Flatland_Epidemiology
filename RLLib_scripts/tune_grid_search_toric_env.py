@@ -40,7 +40,7 @@ class MyPreprocessorClass(Preprocessor):
         return np.concatenate([observation[0].flatten(), observation[1]])  # return the preprocessed observation
 
 ModelCatalog.register_custom_preprocessor("my_prep", MyPreprocessorClass)
-ray.init(log_to_driver=False, object_store_memory=150000000000)
+ray.init(log_to_driver=True, object_store_memory=150000000000)
 ModelCatalog.register_custom_model("conv_model", LightModel)
 
 
@@ -130,11 +130,11 @@ def train_func(config, reporter):
     #agent_config['model'] = {"custom_model": "conv_model", "custom_preprocessor": "my_prep"}
 
     agent_config["num_workers"] = 0
-    agent_config["num_cpus_per_worker"] = 19
-    agent_config["num_gpus"] = 1.0
-    agent_config["num_gpus_per_worker"] = 1.0
+    agent_config["num_cpus_per_worker"] = 11
+    agent_config["num_gpus"] = 0.5
+    agent_config["num_gpus_per_worker"] = 0.5
     agent_config["num_cpus_for_driver"] = 1
-    agent_config["num_envs_per_worker"] = 2
+    agent_config["num_envs_per_worker"] = 6
     agent_config["batch_mode"] = "complete_episodes"
     agent_config["vf_clip_param"] = config['vf_clip_param']
     agent_config["vf_share_layers"] = config['vf_share_layers']
@@ -146,6 +146,7 @@ def train_func(config, reporter):
     agent_config['sgd_minibatch_size'] = config['sgd_minibatch_size']
     agent_config['clip_param'] = config['clip_param']
     agent_config['gamma'] = config['gamma']
+    agent_config['vf_loss_coeff'] = config['vf_loss_coeff']
 
     if config['use_centralized_vf']:
         agent_config['callbacks'] = {
@@ -201,7 +202,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                     vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
                     final_reward_times_healthy, entropy_coeff, local_dir, learning_rate, infection_prob,
                     policy_name, initially_infected, decreasing_vaccine_reward, horizon, use_centralized_vf,
-                    num_sgd_iter, sgd_minibatch_size, clip_param, gamma):
+                    num_sgd_iter, sgd_minibatch_size, clip_param, gamma, vf_loss_coeff):
 
     tune.run(
         train_func,
@@ -230,7 +231,8 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "num_sgd_iter": num_sgd_iter,
                 "sgd_minibatch_size": sgd_minibatch_size,
                 "clip_param": clip_param,
-                "gamma": gamma
+                "gamma": gamma,
+                "vf_loss_coeff": vf_loss_coeff
                 },
         resources_per_trial={
             "cpu": 12,
@@ -242,7 +244,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/map_size_2_infected_horizon_grid_search'
+    dir = '/home/guillaume/Flatland_Epidemiology/toric_env_tests/2_initially_infected_vf_loss_coeff_grid_search'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
