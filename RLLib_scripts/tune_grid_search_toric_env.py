@@ -147,6 +147,7 @@ def train_func(config, reporter):
     agent_config['clip_param'] = config['clip_param']
     agent_config['gamma'] = config['gamma']
     agent_config['vf_loss_coeff'] = config['vf_loss_coeff']
+    agent_config['kl_target'] = config['kl_target']
 
     if config['use_centralized_vf']:
         agent_config['callbacks'] = {
@@ -167,7 +168,7 @@ def train_func(config, reporter):
         """Creates a Unified logger with a default logdir prefix
         containing the agent name and the env id
         """
-        logdir = policy_name
+        logdir = config['folder_name']
         logdir = tempfile.mkdtemp(
             prefix=logdir, dir=config['local_dir'])
         return UnifiedLogger(conf, logdir, None)
@@ -177,12 +178,12 @@ def train_func(config, reporter):
     ppo_trainer = PPOTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
 
     #ppo_trainer.restore('/home/guillaume/sdd/toric_env_grid_searches/infection_prob_grid_search/ppo_policy_infection_prob_003ypak0lyr/checkpoint_5001/checkpoint-5001')
-    #checkpoint_path='/mount/SDC/Flatland_Epidemiology/toric_env_tests/toric_env_decreasing_reward/ppo_policy_map_size_19_initially_infected_15f5fmlox/checkpoint_8801/checkpoint-8801'
-    #state = pickle.load(open(checkpoint_path, "rb"))
-    #ppo_trainer.local_evaluator.restore(state["evaluator"])
-    #remote_state = ray.put(state["evaluator"])
-    #for r in ppo_trainer.remote_evaluators:
-    #    r.restore.remote(remote_state)
+    checkpoint_path='/mount/SDC/Flatland_Epidemiology/toric_env_tests/KL_penalty_test/ppo_policy_kl_target_0003_afwal8bu/checkpoint_2201/checkpoint-2201'
+    state = pickle.load(open(checkpoint_path, "rb"))
+    ppo_trainer.local_evaluator.restore(state["evaluator"])
+    remote_state = ray.put(state["evaluator"])
+    for r in ppo_trainer.remote_evaluators:
+        r.restore.remote(remote_state)
 
     for i in range(100000 + 2):
         print("== Iteration", i, "==")
@@ -202,7 +203,8 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                     vf_clip_param, num_iterations, vf_share_layers, step_reward, final_reward,
                     final_reward_times_healthy, entropy_coeff, local_dir, learning_rate, infection_prob,
                     policy_name, initially_infected, decreasing_vaccine_reward, horizon, use_centralized_vf,
-                    num_sgd_iter, sgd_minibatch_size, clip_param, gamma, vf_loss_coeff):
+                    num_sgd_iter, sgd_minibatch_size, clip_param, gamma, vf_loss_coeff, kl_target,
+                    folder_name):
 
     tune.run(
         train_func,
@@ -232,7 +234,9 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "sgd_minibatch_size": sgd_minibatch_size,
                 "clip_param": clip_param,
                 "gamma": gamma,
-                "vf_loss_coeff": vf_loss_coeff
+                "vf_loss_coeff": vf_loss_coeff,
+                "kl_target": kl_target,
+                "folder_name": folder_name
                 },
         resources_per_trial={
             "cpu": 12,
@@ -244,7 +248,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/home/guillaume/Flatland_Epidemiology/toric_env_tests/2_initially_infected_vf_loss_coeff_grid_search'
+    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/initially_infected_grid_search'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 

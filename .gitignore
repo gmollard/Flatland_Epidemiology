@@ -3,3 +3,4 @@ python/magent/__pycache__
 .idea*
 build*
 obs_*
+toric_env_tests/*
