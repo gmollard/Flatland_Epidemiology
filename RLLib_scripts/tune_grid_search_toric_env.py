@@ -32,7 +32,7 @@ import numpy as np
 
 class MyPreprocessorClass(Preprocessor):
     def _init_shape(self, obs_space, options):
-        return (4*obs_space[0].shape[0]**2 + 23,)
+        return (4*obs_space[0].shape[0]**2 + 2,)
 
     def transform(self, observation):
         #print(np.concatenate([observation[0].flatten(), observation[1]]).shape)
@@ -72,17 +72,30 @@ def on_episode_end(info):
             info['episode'].global_obs.append(env.get_global_observation())
     assert(find_ep)
 
+def on_episode_end_custom_metric(info):
+        episode = info['episode']
+        num_immunized = episode.last_observation_for('agent_0')[-1]
+        num_infected = episode.last_observation_for('agent_0')[-2]
+        episode.custom_metrics["num_immunized"] = num_immunized
+        episode.custom_metrics["num_infected"] = num_infected
+
 
 def train_func(config, reporter):
 
     # init the game
     print('Init Env')
     policy_name = config['policy_name'].format(**locals()).replace('.', '')
-
+    
+    if config['view_radius'] == 6:
+        config['n_agents'] = 8
+    elif config['view_radius'] == 3:
+        config['n_agents'] = 4
+    else:
+        raise(NotImplementedError)
     # Specifying observation space and actions space dimensions.
     view_radius = config["view_radius"]*2 + 1
     obs_space = gym.spaces.Tuple((gym.spaces.Box(low=0, high=1, shape=(view_radius, view_radius, 4)),
-                                  gym.spaces.Space((23,))))
+                                  gym.spaces.Space((2,))))
     act_space = (gym.spaces.Discrete(9))
 
     policy_graphs = {}
@@ -154,7 +167,7 @@ def train_func(config, reporter):
             "on_episode_start": tune.function(on_episode_start),
             "on_episode_step": tune.function(on_episode_step),
             "on_episode_end": tune.function(on_episode_end)}
-
+    agent_config['callbacks'] = {"on_episode_end": tune.function(on_episode_end_custom_metric)}
     agent_config['log_level'] = 'WARN'
     # agent_config["n_step"] = 3
 
@@ -168,7 +181,7 @@ def train_func(config, reporter):
         """Creates a Unified logger with a default logdir prefix
         containing the agent name and the env id
         """
-        logdir = config['folder_name']
+        logdir = config['folder_name'].format(**locals()).replace('.', '')
         logdir = tempfile.mkdtemp(
             prefix=logdir, dir=config['local_dir'])
         return UnifiedLogger(conf, logdir, None)
@@ -177,13 +190,13 @@ def train_func(config, reporter):
 
     ppo_trainer = PPOTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
 
-    #ppo_trainer.restore('/home/guillaume/sdd/toric_env_grid_searches/infection_prob_grid_search/ppo_policy_infection_prob_003ypak0lyr/checkpoint_5001/checkpoint-5001')
-    checkpoint_path='/mount/SDC/Flatland_Epidemiology/toric_env_tests/KL_penalty_test/ppo_policy_kl_target_0003_afwal8bu/checkpoint_2201/checkpoint-2201'
-    state = pickle.load(open(checkpoint_path, "rb"))
-    ppo_trainer.local_evaluator.restore(state["evaluator"])
-    remote_state = ray.put(state["evaluator"])
-    for r in ppo_trainer.remote_evaluators:
-        r.restore.remote(remote_state)
+    #ppo_trainer.restore('/mount/SDC/Flatland_Epidemiology/toric_env_tests/KL_penalty_test/ppo_policy_kl_target_0003_afwal8bu/checkpoint_2201/checkpoint-2201')
+    #checkpoint_path='/mount/SDC/Flatland_Epidemiology/toric_env_tests/KL_penalty_test/ppo_policy_kl_target_0003_afwal8bu/checkpoint_2201/checkpoint-2201'
+    #state = pickle.load(open(checkpoint_path, "rb"))
+    #ppo_trainer.local_evaluator.restore(state["evaluator"])
+    #remote_state = ray.put(state["evaluator"])
+    #for r in ppo_trainer.remote_evaluators:
+    #    r.restore.remote(remote_state)
 
     for i in range(100000 + 2):
         print("== Iteration", i, "==")
@@ -248,7 +261,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/initially_infected_grid_search'
+    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/n_agents_view_range_grid_search'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 

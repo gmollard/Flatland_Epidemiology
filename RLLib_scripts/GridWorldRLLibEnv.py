@@ -72,8 +72,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         obs = {}
         for i, agent_name in enumerate(self.agents):
             obs[agent_name] = [observations[0][i], observations[1][i]]#, observations[1][i]]
-            obs[agent_name][1] = np.append(obs[agent_name][1], [self.env.get_num_infected(self.handles[0])[0], 0])
-
+            #obs[agent_name][1] = np.append(obs[agent_name][1], [self.env.get_num_infected(self.handles[0])[0], 0])
+            obs[agent_name][1] = [self.env.get_num_infected(self.handles[0])[0], 0]
         if self.render:
             self.env.render()
 
@@ -156,8 +156,9 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         for i, agent_name in enumerate(self.agents):
             obs[agent_name] = [observations[0][i], observations[1][i]]
             obs[agent_name][1][-1] = self.total_reward
-            obs[agent_name][1] = np.append(obs[agent_name][1], self.num_infected)
-            obs[agent_name][1] = np.append(obs[agent_name][1], self.env.get_num_immunized(self.handles[0]))
+            #obs[agent_name][1] = np.append(obs[agent_name][1], self.num_infected)
+            #obs[agent_name][1] = np.append(obs[agent_name][1], self.env.get_num_immunized(self.handles[0]))
+            obs[agent_name][1] = [self.num_infected, self.env.get_num_immunized(self.handles[0])]
             rewards[agent_name] = rew[i]
             dones[agent_name] = False
             infos[agent_name] = None
