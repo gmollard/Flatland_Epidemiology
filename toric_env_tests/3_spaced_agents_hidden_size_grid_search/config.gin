@@ -2,11 +2,11 @@ run_grid_search.name = 'n_agents_view_range_grid_search'
 run_grid_search.num_iterations = 10003
 
 
-run_grid_search.view_radius = {"grid_search": [3, 6]}
+run_grid_search.view_radius = 3
 run_grid_search.n_agents = None
-run_grid_search.hidden_sizes = [64, 64]
+run_grid_search.hidden_sizes = {"grid_search": [[32,32], [64, 64]]}
 run_grid_search.save_every = 200
-run_grid_search.map_size = {"grid_search": [39, 49]}#{"grid_search": [39, 49, 59, 69]}
+run_grid_search.map_size = 19#{"grid_search": [39, 49, 59, 69]}
 
 run_grid_search.vaccine_reward = 0.1
 run_grid_search.entropy_coeff = 1e-3#{"grid_search": [1e-4, 1e-3, 1e-2, 1e-1]}
@@ -14,14 +14,14 @@ run_grid_search.final_reward = 2
 run_grid_search.final_reward_times_healthy = True
 run_grid_search.step_reward = -0.01
 run_grid_search.horizon = 100
-run_grid_search.infection_prob = 0.02
+run_grid_search.infection_prob = {"grid_search": [0.02, 0.03]}
 run_grid_search.learning_rate = 5e-5
 
 run_grid_search.vf_share_layers = False
 run_grid_search.vf_clip_param = 10
 
 run_grid_search.policy_name = "ppo_policy"
-run_grid_search.folder_name = "ppo_policy_view_radius_{config[view_radius]}_map_size_{config[map_size]}"
+run_grid_search.folder_name = "ppo_policy_hidden_size_{config[hidden_sizes][0]}_infection_prob_{config[infection_prob]}_"
 run_grid_search.initially_infected = 1#{"grid_search": [2, 3, 4, 5]}
 
 run_grid_search.decreasing_vaccine_reward = True
