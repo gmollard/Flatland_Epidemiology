@@ -74,6 +74,9 @@ def on_episode_end(info):
 
 def on_episode_end_custom_metric(info):
         episode = info['episode']
+        for env in info['env'].envs:
+            if env.n_episodes < 2000:
+                env.n_episodes += 1
         num_immunized = episode.last_observation_for('agent_0')[-1]
         num_infected = episode.last_observation_for('agent_0')[-2]
         episode.custom_metrics["num_immunized"] = num_immunized
@@ -261,7 +264,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/mount/SDC/Flatland_Epidemiology/toric_env_tests/n_agents_view_range_grid_search'
+    dir = '/home/guillaume/Flatland_Epidemiology/toric_env_tests/3_spaced_agents_hidden_size_grid_search'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
