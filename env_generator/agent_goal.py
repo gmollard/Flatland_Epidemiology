@@ -304,17 +304,17 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
             for i in range(9, map_size, 16):
                 for j in range(5, map_size - 1, 8):
                     health_officials_pos.append((i, j))
-	    
+
             for i in range(5, map_size, 8):
                 for j in range(9, map_size - 1, 16):
-                	health_officials_pos.append((i, j))
+                    health_officials_pos.append((i, j))
         elif n_agents == 4:
-            for i in range(5, map_size, 8):           
-                for j in range(1, map_size - 1, 4):    
+            for i in range(3, map_size, 5):
+                for j in range(1, map_size - 1, 5):
                     health_officials_pos.append((i, j))
 
-            for i in range(1, map_size, 4):
-                for j in range(5, map_size - 1, 8):       
+            for i in range(1, map_size, 5):
+                for j in range(3, map_size - 1, 5):
                     health_officials_pos.append((i, j))
 
         #print('POP POS', population_pos)
