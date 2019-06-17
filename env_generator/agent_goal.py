@@ -301,12 +301,12 @@ def generate_map(env, map_size, handles, agent_generator, n_agents=None, infecti
 
         health_officials_pos = []
         if n_agents == 8:
-            for i in range(9, map_size, 16):
+            for i in range(1, map_size, 8):
                 for j in range(5, map_size - 1, 8):
                     health_officials_pos.append((i, j))
 
             for i in range(5, map_size, 8):
-                for j in range(9, map_size - 1, 16):
+                for j in range(1, map_size - 1, 8):
                     health_officials_pos.append((i, j))
         elif n_agents == 4:
             for i in range(1, map_size, 4):
