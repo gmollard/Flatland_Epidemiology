@@ -54,6 +54,8 @@ class GridWorldRLLibEnv(MultiAgentEnv):
 
         self.t = None
 
+        self.step_propagation = config['step_propagation']
+
 
 
 
@@ -66,9 +68,15 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         self.env.reset()
         generate_map(self.env, self.map_size, self.handles, self.agent_generator, self.n_agents,
                      n_infected_init=self.initially_infected)
+
+        self.agents = [f'agent_{i}' for i in range(self.env.get_num(self.handles[1]))] 
+        for _ in range(self.step_propagation):
+            self.env.set_action(self.handles[1], np.array( [2\
+                    for agent_name in self.agents]).astype(np.int32))
+            self.env.step()
+
         observations = self.env.get_observation(self.handles[1], self.observation_mode)
         # assert(self.n_agents == self.env.get_num(self.handles[1]))
-        self.agents = [f'agent_{i}' for i in range(self.env.get_num(self.handles[1]))]
         obs = {}
         for i, agent_name in enumerate(self.agents):
             obs[agent_name] = [observations[0][i], observations[1][i]]#, observations[1][i]]
@@ -132,7 +140,7 @@ class GridWorldRLLibEnv(MultiAgentEnv):
         if self.decreasing_vaccine_reward:
             for i in range(len(rew)):
                 if rew[i] > self.step_reward:
-                    rew[i] -= 2*self.vaccine_reward*(self.n_episodes / 1000)
+                    rew[i] -= 2*self.vaccine_reward*(self.n_episodes / 3000)
 
         if dones['__all__']:
             if self.final_reward_times_healthy:

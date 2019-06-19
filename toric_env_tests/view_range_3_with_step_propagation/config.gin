@@ -1,0 +1,37 @@
+run_grid_search.name = 'step_propagation_test'
+run_grid_search.num_iterations = 10005
+
+
+run_grid_search.view_radius = 3 #{"grid_search": [3, 6]}
+run_grid_search.n_agents = None
+run_grid_search.hidden_sizes = [32, 32]#{"grid_search": [[32,32], [64, 64], [128, 128], [256, 256]]}
+run_grid_search.save_every = 50
+run_grid_search.map_size = 19
+
+run_grid_search.vaccine_reward = 0.1
+run_grid_search.entropy_coeff = 1e-3#{"grid_search": [1e-4, 1e-3, 1e-2, 0]}
+run_grid_search.final_reward = 2
+run_grid_search.final_reward_times_healthy = True
+run_grid_search.step_reward = -0.01
+run_grid_search.horizon = 100
+run_grid_search.infection_prob = {"grid_search": [0.03, 0.05, 0.1, 0.15]}
+run_grid_search.learning_rate = 5e-5
+
+run_grid_search.vf_share_layers = False
+run_grid_search.vf_clip_param = 10
+
+run_grid_search.policy_name = "ppo_policy"
+run_grid_search.folder_name = "{config[algorithm]}_policy_view_range_{config[view_radius]}_step_propagation_{config[step_propagation]}_infection_prob_{config[infection_prob]}_"
+run_grid_search.initially_infected = 1
+
+run_grid_search.decreasing_vaccine_reward = False
+run_grid_search.use_centralized_vf = False
+run_grid_search.num_sgd_iter = 10
+run_grid_search.sgd_minibatch_size = 128
+run_grid_search.clip_param = 0.2#{"grid_search": [0.1, 0.2, 0.3]}
+run_grid_search.gamma = 0.99
+run_grid_search.vf_loss_coeff = 0.833
+run_grid_search.kl_target = 0.003#{"grid_search": [0, 3e-3, 1e-2, 3e-2]}
+
+run_grid_search.algorithm = 'ppo'
+run_grid_search.step_propagation = 5

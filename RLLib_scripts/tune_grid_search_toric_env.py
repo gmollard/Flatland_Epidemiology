@@ -75,7 +75,7 @@ def on_episode_end(info):
 def on_episode_end_custom_metric(info):
         episode = info['episode']
         for env in info['env'].envs:
-            if env.n_episodes < 2000:
+            if env.n_episodes < 6000:
                 env.n_episodes += 1
         num_immunized = episode.last_observation_for('agent_0')[-1]
         num_infected = episode.last_observation_for('agent_0')[-2]
@@ -104,7 +104,10 @@ def train_func(config, reporter):
     policy_graphs = {}
     # Dict with the different policies to train
     # policy_graphs['ppo_policy_infection_prob_003'] = (PPOPolicyGraph, obs_space, act_space, {})
-    policy_graphs[policy_name] = (PPOPolicyGraph, obs_space, act_space, {})
+    if config['algorithm'] == 'ppo':
+        policy_graphs[policy_name] = (PPOPolicyGraph, obs_space, act_space, {})
+    elif config['algorithm'] == 'dqn':
+        policy_graphs[policy_name] = (DQNPolicyGraph, obs_space, act_space, {})
     # else:
     #     for i in range(config['n_agents']):
     #         policy_graphs[f"ppo_policy_agent_{i}_independent_training_{config['independent_training']}"]\
@@ -134,11 +137,16 @@ def train_func(config, reporter):
                   "horizon": config["horizon"],
                   "infection_prob": config["infection_prob"],
                   "initially_infected": config["initially_infected"],
-                  "decreasing_vaccine_reward": config['decreasing_vaccine_reward']
+                  "decreasing_vaccine_reward": config['decreasing_vaccine_reward'],
+                  "step_propagation": config['step_propagation']
                   }
 
     # PPO Config specification
-    agent_config = ppo.DEFAULT_CONFIG.copy()
+    if config['algorithm'] == 'ppo':
+        agent_config = ppo.DEFAULT_CONFIG.copy()
+    elif config['algorithm'] == 'dqn':
+        agent_config = dqn.DEFAULT_CONFIG.copy()
+    
     agent_config['env_config'] = env_config
     # Here we use the default fcnet with modified hidden layers size
     #print('DEFAULT_PREPROCESSOR:', agent_config['preprocessor_pref'])
@@ -150,20 +158,23 @@ def train_func(config, reporter):
     agent_config["num_gpus"] = 0.5
     agent_config["num_gpus_per_worker"] = 0.5
     agent_config["num_cpus_for_driver"] = 1
-    agent_config["num_envs_per_worker"] = 6
-    agent_config["batch_mode"] = "complete_episodes"
-    agent_config["vf_clip_param"] = config['vf_clip_param']
-    agent_config["vf_share_layers"] = config['vf_share_layers']
-    agent_config["simple_optimizer"] = False
-    agent_config["entropy_coeff"] = config["entropy_coeff"]
-    agent_config["num_sgd_iter"] = config["num_sgd_iter"]
-    agent_config['use_centralized_vf'] = config["use_centralized_vf"]
-    agent_config['max_vf_agents'] = 12
-    agent_config['sgd_minibatch_size'] = config['sgd_minibatch_size']
-    agent_config['clip_param'] = config['clip_param']
-    agent_config['gamma'] = config['gamma']
-    agent_config['vf_loss_coeff'] = config['vf_loss_coeff']
-    agent_config['kl_target'] = config['kl_target']
+    agent_config["num_envs_per_worker"] = 2
+    
+    if config['algorithm'] == 'ppo':
+        agent_config["batch_mode"] = "complete_episodes"
+        agent_config["vf_clip_param"] = config['vf_clip_param']
+        agent_config["vf_share_layers"] = config['vf_share_layers']
+        agent_config["simple_optimizer"] = False
+        agent_config["entropy_coeff"] = config["entropy_coeff"]
+        agent_config["num_sgd_iter"] = config["num_sgd_iter"]
+        agent_config['use_centralized_vf'] = config["use_centralized_vf"]
+        agent_config['max_vf_agents'] = 12
+        agent_config['sgd_minibatch_size'] = config['sgd_minibatch_size']
+        agent_config['clip_param'] = config['clip_param']
+        agent_config['gamma'] = config['gamma']
+        agent_config['vf_loss_coeff'] = config['vf_loss_coeff']
+        agent_config['kl_target'] = config['kl_target']
+        agent_config['lr'] = config['learning_rate']
 
     if config['use_centralized_vf']:
         agent_config['callbacks'] = {
@@ -178,7 +189,7 @@ def train_func(config, reporter):
                                 "policy_mapping_fn": policy_mapping_fn,
                                 "policies_to_train": list(policy_graphs.keys())}
 
-    agent_config['lr'] = config['learning_rate']
+
     agent_config['horizon'] = config['horizon']
     def logger_creator(conf):
         """Creates a Unified logger with a default logdir prefix
@@ -190,28 +201,30 @@ def train_func(config, reporter):
         return UnifiedLogger(conf, logdir, None)
 
     logger = logger_creator
-
-    ppo_trainer = PPOTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
-
-    #ppo_trainer.restore('/mount/SDC/Flatland_Epidemiology/toric_env_tests/KL_penalty_test/ppo_policy_kl_target_0003_afwal8bu/checkpoint_2201/checkpoint-2201')
-    #checkpoint_path='/mount/SDC/Flatland_Epidemiology/toric_env_tests/KL_penalty_test/ppo_policy_kl_target_0003_afwal8bu/checkpoint_2201/checkpoint-2201'
-    #state = pickle.load(open(checkpoint_path, "rb"))
-    #ppo_trainer.local_evaluator.restore(state["evaluator"])
-    #remote_state = ray.put(state["evaluator"])
-    #for r in ppo_trainer.remote_evaluators:
-    #    r.restore.remote(remote_state)
+    
+    if config['algorithm'] == 'ppo':
+        trainer = PPOTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
+    elif config['algorithm'] == 'dqn':
+        trainer = DQNTrainer(env=GridWorldRLLibEnv, config=agent_config, logger_creator=logger)
+    #ppo_trainer.restore('/home/guillaume/Flatland_Epidemiology/toric_env_tests/3_entropy_coeff_grid_search/ppo_policy_entropy_coeff_0001_mncelqfg/checkpoint_201/checkpoint-201')
+    checkpoint_path='/home/guillaume/Flatland_Epidemiology/toric_env_tests/view_range_3_with_step_propagation/ppo_policy_view_range_3_step_propagation_5_infection_prob_015_65coq4y1/checkpoint_201/checkpoint-201'
+    state = pickle.load(open(checkpoint_path, "rb"))
+    trainer.local_evaluator.restore(state["evaluator"])
+    remote_state = ray.put(state["evaluator"])
+    for r in trainer.remote_evaluators:
+        r.restore.remote(remote_state)
 
     for i in range(100000 + 2):
         print("== Iteration", i, "==")
 
         print("-- PPO --")
-        print(pretty_print(ppo_trainer.train()))
+        print(pretty_print(trainer.train()))
 
         if i % config['save_every'] == 0:
-            checkpoint = ppo_trainer.save()
+            checkpoint = trainer.save()
             print("checkpoint saved at", checkpoint)
 
-        reporter(num_iterations_trained=ppo_trainer._iteration)
+        reporter(num_iterations_trained=trainer._iteration)
 
 
 @gin.configurable
@@ -220,7 +233,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                     final_reward_times_healthy, entropy_coeff, local_dir, learning_rate, infection_prob,
                     policy_name, initially_infected, decreasing_vaccine_reward, horizon, use_centralized_vf,
                     num_sgd_iter, sgd_minibatch_size, clip_param, gamma, vf_loss_coeff, kl_target,
-                    folder_name):
+                    folder_name, algorithm, step_propagation):
 
     tune.run(
         train_func,
@@ -252,7 +265,9 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
                 "gamma": gamma,
                 "vf_loss_coeff": vf_loss_coeff,
                 "kl_target": kl_target,
-                "folder_name": folder_name
+                "folder_name": folder_name,
+                "algorithm": algorithm,
+                "step_propagation": step_propagation
                 },
         resources_per_trial={
             "cpu": 12,
@@ -264,7 +279,7 @@ def run_grid_search(name, view_radius, n_agents, hidden_sizes, save_every, map_s
 
 if __name__ == '__main__':
     gin.external_configurable(tune.grid_search)
-    dir = '/home/guillaume/Flatland_Epidemiology/toric_env_tests/3_spaced_agents_hidden_size_grid_search'
+    dir = '/home/guillaume/Flatland_Epidemiology/toric_env_tests/view_range_3_large_map_size_with_step_propagation'
     gin.parse_config_file(dir + '/config.gin')
     run_grid_search(local_dir=dir)
 
